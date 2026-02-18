@@ -11,7 +11,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 // --- MASUKAN URL BARU ANDA DISINI ---
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxEMu2n98ZPMihxXFS29ijcJHQx08sZnnpgAVnRFSSz3jbdcBvmjMgcCuIcvg04ZR0S6g/exec"; 
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzXbngLqDGRFFvZ11d_LODkbTF6U4k6UUVdBB0aYn6udGuiFkR0L98Xp50Qp__rD0_EuQ/exec"; 
 
 const App = () => {
   // STATE
