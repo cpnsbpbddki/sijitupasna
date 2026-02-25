@@ -207,12 +207,12 @@ const App = () => {
           </span>
         </h1>
         <p className="text-lg md:text-xl text-slate-300 max-w-2xl mb-8 leading-relaxed">
-          Sistem Informasi Pengkajian Kebutuhan Pasca Bencana. Merupakan portal terpadu untuk pendataan kebencanaan, penilaian kerusakan dan kerugian di wilayah DKI Jakarta secara Real-Time.
+          Sistem Informasi Pengkajian Kebutuhan Pasca Bencana. Merupakan portal terpadu untuk pendataan, valuasi kerugian, dan manajemen aset terdampak di wilayah DKI Jakarta secara Real-Time.
         </p>
         <div className="flex flex-wrap gap-4 text-sm font-bold text-slate-400">
           <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><MapPin className="text-orange-500" size={16}/> Pemetaan Akurat</div>
           <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><Calculator className="text-blue-500" size={16}/> Kalkulasi Otomatis</div>
-          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><ShieldCheck className="text-emerald-500" size={16}/> Akurasi Data</div>
+          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><ShieldCheck className="text-emerald-500" size={16}/> Tersertifikasi</div>
         </div>
       </div>
 
@@ -236,7 +236,7 @@ const App = () => {
         )}
 
         <div className="mt-12 pt-6 border-t border-white/10 text-center">
-          <p className="text-[10px] text-slate-500 flex items-center justify-center gap-1"><Info size={12}/> Dukungan Teknis: Bidang Rehabilitasi Rekonstruksi BPBD DKI Jakarta</p>
+          <p className="text-[10px] text-slate-500 flex items-center justify-center gap-1"><Info size={12}/> Dukungan Teknis: Pusdatin BPBD DKI</p>
         </div>
       </div>
       
@@ -263,7 +263,7 @@ const App = () => {
         
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           <p className="px-4 text-[10px] font-bold uppercase opacity-40 mb-2 mt-2">Menu Utama</p>
-          <NavButton icon={LayoutDashboard} label="Dashboard" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
+          <NavButton icon={LayoutDashboard} label="Dashboard Pusat" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
           <NavButton icon={FileText} label="Input Assessment" active={currentView === 'input'} onClick={() => { setEditData(null); setCurrentView('input'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
           <NavButton icon={User} label="Profil Petugas" active={currentView === 'profile'} onClick={() => { setCurrentView('profile'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
           
@@ -271,7 +271,7 @@ const App = () => {
             <>
               <div className="my-6 border-t border-white/5"></div>
               <p className="px-4 text-[10px] font-bold uppercase opacity-40 mb-2">Panel Admin</p>
-              <NavButton icon={UserCog} label="Setting User active={currentView === 'users'} onClick={() => { setCurrentView('users'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
+              <NavButton icon={UserCog} label="Manajemen Akses" active={currentView === 'users'} onClick={() => { setCurrentView('users'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
               <NavButton icon={Megaphone} label="Siaran Pengumuman" active={currentView === 'notification'} onClick={() => { setCurrentView('notification'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
             </>
           )}
@@ -366,7 +366,7 @@ const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser,
   <div className="space-y-8 animate-fadeIn">
     {/* Headings */}
     <div>
-      <h2 className="text-3xl font-black tracking-tight">Dashboard</h2>
+      <h2 className="text-3xl font-black tracking-tight">Dashboard Pemantauan</h2>
       <p className="opacity-60 mt-1">Ringkasan data assessment bencana secara real-time.</p>
     </div>
 
@@ -374,7 +374,7 @@ const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser,
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <StatCard title="Total Laporan" value={stats.totalData} icon={Database} color="blue" isDark={isDark} />
       <StatCard title="Total Valuasi Kerugian" value={`Rp ${(stats.totalLoss/1000000).toFixed(0)} Juta`} icon={Calculator} color="orange" isDark={isDark} />
-      <StatCard title="Status Data" value="Terhubung" icon={Signal} color="emerald" isDark={isDark} />
+      <StatCard title="Status Jaringan" value="Terhubung" icon={Signal} color="emerald" isDark={isDark} />
     </div>
 
     {/* Main Data Table */}
