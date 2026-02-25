@@ -5,7 +5,7 @@ import {
   Menu, X, ShieldCheck, Activity, Database, TrendingUp, Signal, 
   KeyRound, ChevronRight, GraduationCap, Layers, Box, CheckCircle, 
   XCircle, Loader2, Edit, ExternalLink, RefreshCw, Bell, Megaphone,
-  Landmark, Calculator, FileDown, FileSpreadsheet, User, Info, PhoneCall
+  Landmark, Calculator, FileDown, FileSpreadsheet, Printer, User, Info
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -54,33 +54,56 @@ const App = () => {
     fetchInitData();
   }, []);
 
-  const fetchInitData = () => {
+  const fetchInitData = async () => {
     setIsLoadingInit(true);
     if(GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith("http")) {
-        fetch(`${GOOGLE_SCRIPT_URL}?action=get_init_data`)
-        .then(res => res.json())
-        .then(data => { 
-            let fetchedUsers = data.users || [];
-            if (fetchedUsers.length === 0) fetchedUsers = [{ id: 999, username: 'admin', password: '123', role: 'admin', name: 'Emergency Admin', assignedKelurahan: '' }];
-            setUsers(fetchedUsers); 
-            if(data.notification) setRunningText(data.notification);
-            if(data.botName) setBotUsername(data.botName); 
+        try {
+            const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_init_data`);
+            const text = await res.text();
+            try {
+                const data = JSON.parse(text);
+                let fetchedUsers = Array.isArray(data.users) ? data.users : [];
+                if (fetchedUsers.length === 0) fetchedUsers = [{ id: 999, username: 'admin', password: '123', role: 'admin', name: 'Emergency Admin', assignedKelurahan: '' }];
+                setUsers(fetchedUsers); 
+                if(data.notification) setRunningText(data.notification);
+                if(data.botName) setBotUsername(data.botName); 
+            } catch (e) {
+                console.error("Format data init tidak valid:", text);
+                setUsers([{ id: 1, username: 'admin', password: '123', role: 'admin', name: 'Admin Offline', assignedKelurahan: '' }]);
+            }
             setIsLoadingInit(false); 
-        })
-        .catch(err => { console.error(err); setUsers([{ id: 1, username: 'admin', password: '123', role: 'admin', name: 'Admin Offline', assignedKelurahan: '' }]); setIsLoadingInit(false); });
+        } catch(err) {
+            console.error("Gagal koneksi ke server", err);
+            setUsers([{ id: 1, username: 'admin', password: '123', role: 'admin', name: 'Admin Offline', assignedKelurahan: '' }]);
+            setIsLoadingInit(false);
+        }
     } else {
         setUsers([{ id: 1, username: 'admin', password: '123', role: 'admin', name: 'Admin Demo', assignedKelurahan: '' }]);
         setIsLoadingInit(false);
     }
   };
 
-  const fetchReports = () => {
+  const fetchReports = async () => {
     setIsSyncing(true);
     if(GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith("http")) {
-        fetch(`${GOOGLE_SCRIPT_URL}?action=get_reports&t=${Date.now()}`)
-        .then(res => res.json())
-        .then(data => { setReports(data); setIsSyncing(false); showToast("Data disinkronisasi", 'success'); })
-        .catch(err => { console.error(err); setIsSyncing(false); showToast("Gagal sinkronisasi", 'error'); });
+        try {
+            const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_reports&t=${Date.now()}`);
+            const text = await res.text();
+            try {
+                const data = JSON.parse(text);
+                setReports(Array.isArray(data) ? data : []); 
+                setIsSyncing(false); 
+                showToast("Data disinkronisasi", 'success');
+            } catch(e) {
+                console.error("Gagal memproses JSON:", text);
+                setIsSyncing(false); 
+                showToast("Terjadi kesalahan format data dari server", 'error');
+            }
+        } catch(err) {
+            console.error(err); 
+            setIsSyncing(false); 
+            showToast("Gagal mengambil data", 'error');
+        }
     } else { setTimeout(() => setIsSyncing(false), 1000); }
   };
 
@@ -113,7 +136,7 @@ const App = () => {
 
   const stats = useMemo(() => {
     const totalData = reports.length;
-    const totalLoss = reports.reduce((acc, curr) => acc + (parseInt(curr.assets?.totalKerugian) || 0) + (parseInt(curr.building?.totalKerugianBangunan) || 0), 0);
+    const totalLoss = reports.reduce((acc, curr) => acc + (parseInt(curr?.assets?.totalKerugian) || 0) + (parseInt(curr?.building?.totalKerugianBangunan) || 0), 0);
     return { totalData, totalLoss };
   }, [reports]);
 
@@ -122,10 +145,11 @@ const App = () => {
     if (reports.length === 0) return showToast("Tidak ada data", "error");
     let csvContent = "data:text/csv;charset=utf-8,Timestamp,Surveyor,Nama Pemilik,Kelurahan,RT,RW,Latitude,Longitude,Legalitas,NJOP,Kerusakan,Persentase,Luas(m2),Lantai,Kerugian Bangunan,Aset Terdampak,Total Kerugian Aset,Link Foto\n";
     reports.forEach(row => {
-      const b = row.building || {};
-      const photos = row.photos ? row.photos.replace(/\n/g, " | ") : "";
+      const b = row?.building || {};
+      const s = row?.survivor || {};
+      const photos = row?.photos ? row.photos.replace(/\n/g, " | ") : "";
       const clean = (text) => text ? `"${String(text).replace(/"/g, '""')}"` : "";
-      const rowData = [row.timestamp, row.surveyor, clean(row.survivor.nama), row.survivor.kelurahan, row.survivor.rt, row.survivor.rw, row.survivor.lat, row.survivor.lng, b.legalitas, b.njop, b.kerusakan, b.persentase, b.luas, b.lantai, b.totalKerugianBangunan, clean(b.asetTerdampak), row.assets?.totalKerugian, photos];
+      const rowData = [row.timestamp, row.surveyor, clean(s.nama), s.kelurahan, s.rt, s.rw, s.lat, s.lng, b.legalitas, b.njop, b.kerusakan, b.persentase, b.luas, b.lantai, b.totalKerugianBangunan, clean(b.asetTerdampak), row?.assets?.totalKerugian, photos];
       csvContent += rowData.join(",") + "\n";
     });
     const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", `REKAP_JITUPASNA_${new Date().toLocaleDateString()}.csv`); document.body.appendChild(link); link.click();
@@ -140,17 +164,19 @@ const App = () => {
       doc.rect(0, 0, pageWidth, 25, 'F');
       doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("LAPORAN E-JITUPASNA", pageWidth / 2, 12, null, null, "center");
       doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text("BPBD PROVINSI DKI JAKARTA", pageWidth / 2, 19, null, null, "center");
-      doc.setTextColor(0, 0, 0); doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.text(`PEMILIK: ${data.survivor.nama.toUpperCase()}`, 14, 35);
-      doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(`Lokasi: Kel. ${data.survivor.kelurahan} RT ${data.survivor.rt}/${data.survivor.rw}`, 14, 41); doc.text(`Waktu Input: ${new Date(data.timestamp).toLocaleString()}`, 14, 47);
+      
+      const s = data?.survivor || {};
+      doc.setTextColor(0, 0, 0); doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.text(`PEMILIK: ${String(s.nama || 'Tanpa Nama').toUpperCase()}`, 14, 35);
+      doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(`Lokasi: Kel. ${s.kelurahan || '-'} RT ${s.rt || '-'}/${s.rw || '-'}`, 14, 41); doc.text(`Waktu Input: ${new Date(data.timestamp).toLocaleString()}`, 14, 47);
       
       let startY = 60;
-      const b = data.building || {}; const a = data.assets || {};
-      const tableRows = [['Surveyor', data.surveyor], ['Koordinat', `${data.survivor.lat}, ${data.survivor.lng}`], ['Alamat', data.survivor.alamat || '-'], [{ content: 'DATA BANGUNAN & ASET', colSpan: 2, styles: { fillColor: [240, 240, 240], fontStyle: 'bold', halign: 'center' } }], ['Legalitas', b.legalitas || '-'], ['Dimensi', `${b.panjang||0}m x ${b.lebar||0}m (Luas: ${b.luas||0} m²)`], ['Lantai', b.lantai || '-'], ['Kerusakan', `${b.kerusakan} (${b.persentase}%)`], ['Aset Terdampak', b.asetTerdampak || '-'], [{ content: 'VALUASI', colSpan: 2, styles: { fillColor: [240, 240, 240], fontStyle: 'bold', halign: 'center' } }], ['NJOP', `Rp ${parseInt(b.njop || 0).toLocaleString()}`], ['Kerugian Bangunan', `Rp ${parseInt(b.totalKerugianBangunan || 0).toLocaleString()}`], ['Kerugian Aset', `Rp ${parseInt(a.totalKerugian || 0).toLocaleString()}`], [{ content: `TOTAL: Rp ${(parseInt(b.totalKerugianBangunan || 0) + parseInt(a.totalKerugian || 0)).toLocaleString()}`, colSpan: 2, styles: { fillColor: [249, 115, 22], textColor: 255, fontStyle: 'bold', halign: 'right' } }]];
+      const b = data?.building || {}; const a = data?.assets || {};
+      const tableRows = [['Surveyor', data.surveyor || '-'], ['Koordinat', `${s.lat || '-'}, ${s.lng || '-'}`], ['Alamat', s.alamat || '-'], [{ content: 'DATA BANGUNAN & ASET', colSpan: 2, styles: { fillColor: [240, 240, 240], fontStyle: 'bold', halign: 'center' } }], ['Legalitas', b.legalitas || '-'], ['Dimensi', `${b.panjang||0}m x ${b.lebar||0}m (Luas: ${b.luas||0} m²)`], ['Lantai', b.lantai || '-'], ['Kerusakan', `${b.kerusakan || '-'} (${b.persentase || '0'}%)`], ['Aset Terdampak', b.asetTerdampak || '-'], [{ content: 'VALUASI', colSpan: 2, styles: { fillColor: [240, 240, 240], fontStyle: 'bold', halign: 'center' } }], ['NJOP', `Rp ${parseInt(b.njop || 0).toLocaleString()}`], ['Kerugian Bangunan', `Rp ${parseInt(b.totalKerugianBangunan || 0).toLocaleString()}`], ['Kerugian Aset', `Rp ${parseInt(a.totalKerugian || 0).toLocaleString()}`], [{ content: `TOTAL: Rp ${(parseInt(b.totalKerugianBangunan || 0) + parseInt(a.totalKerugian || 0)).toLocaleString()}`, colSpan: 2, styles: { fillColor: [249, 115, 22], textColor: 255, fontStyle: 'bold', halign: 'right' } }]];
       doc.autoTable({ startY: startY + 5, head: [['Parameter', 'Detail']], body: tableRows, theme: 'grid', headStyles: { fillColor: [15, 23, 42] }, columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 } } });
       
-      if (data.families && data.families.length > 0) { doc.text("Daftar Keluarga Terdampak:", 14, doc.lastAutoTable.finalY + 10); const famRows = data.families.map(f => [f.nama, f.jmlAnggota, f.jmlSekolah, `Rp ${parseInt(f.rugi||0).toLocaleString()}`]); doc.autoTable({ startY: doc.lastAutoTable.finalY + 15, head: [['KK', 'Anggota', 'Sekolah', 'Loss']], body: famRows, theme: 'striped', headStyles: { fillColor: [37, 99, 235] } }); }
-      if (data.photos) { doc.setFontSize(10); doc.setTextColor(37, 99, 235); const links = data.photos.split('\n'); doc.text("Lampiran Foto Dokumentasi:", 14, doc.lastAutoTable.finalY + 15); links.forEach((link, i) => { if(link) doc.textWithLink(`- Lihat Foto ${i+1}`, 14, doc.lastAutoTable.finalY + 22 + (i*6), { url: link }); }); }
-      doc.save(`Laporan_${data.survivor.nama}.pdf`);
+      if (data?.families && data.families.length > 0) { doc.text("Daftar Keluarga Terdampak:", 14, doc.lastAutoTable.finalY + 10); const famRows = data.families.map(f => [f.nama, f.jmlAnggota, f.jmlSekolah, `Rp ${parseInt(f.rugi||0).toLocaleString()}`]); doc.autoTable({ startY: doc.lastAutoTable.finalY + 15, head: [['KK', 'Anggota', 'Sekolah', 'Loss']], body: famRows, theme: 'striped', headStyles: { fillColor: [37, 99, 235] } }); }
+      if (data?.photos) { doc.setFontSize(10); doc.setTextColor(37, 99, 235); const links = data.photos.split('\n'); doc.text("Lampiran Foto Dokumentasi:", 14, doc.lastAutoTable.finalY + 15); links.forEach((link, i) => { if(link) doc.textWithLink(`- Lihat Foto ${i+1}`, 14, doc.lastAutoTable.finalY + 22 + (i*6), { url: link }); }); }
+      doc.save(`Laporan_${s.nama || 'TanpaNama'}.pdf`);
     } catch (e) { console.error(e); showToast("Gagal membuat PDF", "error"); }
   };
 
@@ -303,6 +329,7 @@ const App = () => {
         </main>
       </div>
       
+      {showPasswordModal && <PasswordModal onClose={() => setShowPasswordModal(false)} onChange={handleChangePassword} isDark={theme === 'dark'} />}
       <NotificationToast notification={notification} />
       <style>{`@keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } } .animate-marquee { animation: marquee 25s linear infinite; }`}</style>
     </div>
@@ -334,7 +361,7 @@ const LoginScreenLogic = ({ users, onLogin, onFail }) => {
   );
 };
 
-// --- DASHBOARD VIEW (ENHANCED) ---
+// --- DASHBOARD VIEW (ENHANCED SAFE MAPPING) ---
 const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser, onEdit, onExportCSV, onPrintPDF }) => (
   <div className="space-y-8 animate-fadeIn">
     {/* Headings */}
@@ -387,27 +414,27 @@ const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser,
             ) : reports.map((row, idx) => (
               <tr key={idx} className={`transition duration-200 ${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
                 <td className="px-6 py-4">
-                  <div className="font-bold text-base">{row.survivor.nama}</div>
-                  <div className="text-[10px] opacity-60 flex items-center gap-1 mt-1"><UserCog size={10}/> Petugas: {row.surveyor}</div>
+                  <div className="font-bold text-base">{row?.survivor?.nama || 'Tanpa Nama'}</div>
+                  <div className="text-[10px] opacity-60 flex items-center gap-1 mt-1"><UserCog size={10}/> Petugas: {row?.surveyor || '-'}</div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="font-semibold text-sm">Kel. {row.survivor.kelurahan}</div>
-                  <div className="text-[11px] opacity-60 mt-1">RT {row.survivor.rt} / RW {row.survivor.rw}</div>
+                  <div className="font-semibold text-sm">Kel. {row?.survivor?.kelurahan || '-'}</div>
+                  <div className="text-[11px] opacity-60 mt-1">RT {row?.survivor?.rt || '-'} / RW {row?.survivor?.rw || '-'}</div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="font-mono bg-slate-500/10 px-2 py-1 rounded text-xs inline-block border border-slate-500/20">{row.building?.luas || 0} m²</div>
+                  <div className="font-mono bg-slate-500/10 px-2 py-1 rounded text-xs inline-block border border-slate-500/20">{row?.building?.luas || 0} m²</div>
                 </td>
                 <td className="px-6 py-4">
                   <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${
-                    row.building?.kerusakan === 'rusak' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
-                    row.building?.kerusakan === 'sedang' ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' : 
+                    row?.building?.kerusakan === 'rusak' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
+                    row?.building?.kerusakan === 'sedang' ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' : 
                     'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                   }`}>
-                    {row.building?.kerusakan}
+                    {row?.building?.kerusakan || '-'}
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  {row.photos ? (
+                  {row?.photos ? (
                     <a href={row.photos.split('\n')[0]} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-blue-500 hover:text-blue-400 font-semibold text-xs bg-blue-500/10 px-3 py-1.5 rounded-lg w-fit transition">
                       <Camera size={14}/> Lihat Foto
                     </a>
@@ -417,7 +444,7 @@ const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser,
                   <button onClick={() => onPrintPDF(row)} className="p-2 bg-orange-500/10 text-orange-500 rounded-lg hover:bg-orange-500 hover:text-white transition" title="Unduh PDF Resmi">
                     <Printer size={18}/>
                   </button>
-                  {(currentUser.role === 'admin' || currentUser.username === row.surveyor) && (
+                  {(currentUser.role === 'admin' || currentUser.username === row?.surveyor) && (
                     <button onClick={() => onEdit(row)} className="p-2 bg-blue-500/10 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition" title="Koreksi Data">
                       <Edit size={18}/>
                     </button>
@@ -614,6 +641,90 @@ const UserProfile = ({ user, onUpdate, isDark }) => {
   return (<div className={`max-w-md mx-auto p-8 rounded-3xl border shadow-2xl animate-slideIn mt-10 ${isDark ? 'bg-[#1e293b]/90 border-white/10 backdrop-blur-xl' : 'bg-white border-slate-200'}`}><div className="flex flex-col items-center mb-8"><div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-4xl font-black text-white mb-4 shadow-xl border-4 border-[#0f172a]">{user.name.charAt(0)}</div><h2 className="text-2xl font-black">Profil Petugas</h2><p className="opacity-60 text-sm font-mono mt-1">ID: @{user.username} | {user.assignedKelurahan || 'Admin Pusat'}</p></div><div className="space-y-5"><div><label className="text-[11px] font-bold uppercase opacity-50 tracking-widest mb-2 block">Nama Lengkap</label><input className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDark?'bg-black/20 border-white/10 focus:border-blue-500':'bg-slate-50 focus:border-blue-500'}`} value={name} onChange={e=>setName(e.target.value)} /></div><div><label className="text-[11px] font-bold uppercase opacity-50 tracking-widest mb-2 block">Ubah Kata Sandi (Opsional)</label><input type="password" placeholder="Kosongkan jika tidak ingin diubah" className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDark?'bg-black/20 border-white/10 focus:border-blue-500':'bg-slate-50 focus:border-blue-500'}`} value={pass} onChange={e=>setPass(e.target.value)} /></div><button onClick={() => {onUpdate({ name, password: pass || user.password }); setPass('');}} className="w-full py-4 mt-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-lg shadow-blue-500/20 transition">SIMPAN PEMBARUAN</button></div></div>); 
 };
 
-const UserManagement = ({ users, setUsers, isDark, googleScriptUrl, showToast }) => { const [form, setForm] = useState({ id: null, name: '', username: '', password: '', assignedKelurahan: '', role: 'user' }); const save = (e) => { e.preventDefault(); if(form.id) { setUsers(users.map(u => u.id === form.id ? form : u)); } else { setUsers([...users, { ...form, id: Date.now() }]); if(googleScriptUrl) { fetch(googleScriptUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'manage_user', user: form }) }); } } showToast("User Tersimpan", 'success'); setForm({ id: null, name: '', username: '', password: '', assignedKelurahan: '', role: 'user' }); }; return (<div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-slideIn"><div className={`p-8 rounded-3xl border h-fit shadow-2xl ${isDark ? 'bg-[#1e293b]/90 border-white/10' : 'bg-white border-slate-200'}`}><h3 className="font-black text-xl mb-6 flex items-center gap-2"><UserCog className="text-blue-500"/> {form.id ? 'Edit Akses' : 'Buat Akses Baru'}</h3><form onSubmit={save} className="space-y-4"><input required placeholder="Nama Lengkap Petugas" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} className={`w-full p-3 rounded-xl border outline-none text-sm font-medium ${isDark?'bg-black/20 border-white/10':'bg-slate-50'}`} /><input required placeholder="Username (ID Login)" value={form.username} onChange={e=>setForm({...form, username:e.target.value})} className={`w-full p-3 rounded-xl border outline-none text-sm font-medium ${isDark?'bg-black/20 border-white/10':'bg-slate-50'}`} /><input required placeholder="Kata Sandi" value={form.password} onChange={e=>setForm({...form, password:e.target.value})} className={`w-full p-3 rounded-xl border outline-none text-sm font-medium ${isDark?'bg-black/20 border-white/10':'bg-slate-50'}`} /><input placeholder="Kunci Area (Cth: PLUIT)" value={form.assignedKelurahan} onChange={e=>setForm({...form, assignedKelurahan:e.target.value.toUpperCase()})} className={`w-full p-3 rounded-xl border outline-none text-sm font-medium uppercase ${isDark?'bg-black/20 border-white/10':'bg-slate-50'}`} /><button className="w-full py-3 mt-2 bg-blue-600 text-white rounded-xl font-bold shadow-lg">SIMPAN AKSES</button></form></div><div className="lg:col-span-2 space-y-4">{users.map(u => (<div key={u.id} className={`p-5 rounded-2xl border flex justify-between items-center transition ${isDark ? 'bg-[#1e293b]/50 border-white/5 hover:bg-[#1e293b]' : 'bg-white border-slate-200 shadow-sm'}`}><div><h4 className="font-bold text-lg">{u.name}</h4><p className="text-xs opacity-60 font-mono mt-1">@{u.username} | {u.assignedKelurahan || 'Akses Global'}</p></div><div className="flex gap-2"><button onClick={() => setForm(u)} className="p-2.5 bg-blue-500/10 text-blue-500 rounded-xl hover:bg-blue-500 hover:text-white transition"><Edit size={16}/></button><button onClick={() => setUsers(users.filter(x=>x.id!==u.id))} className="p-2.5 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition"><Trash2 size={16}/></button></div></div>))}</div></div>); };
+// --- FIX: USER MANAGEMENT FORM WITH BACKEND COMMUNICATION ---
+const UserManagement = ({ users, setUsers, isDark, googleScriptUrl, showToast }) => { 
+  const [form, setForm] = useState({ id: null, originalUsername: '', name: '', username: '', password: '', assignedKelurahan: '', role: 'user' }); 
+  
+  const save = (e) => { 
+    e.preventDefault(); 
+    if(form.id) { 
+      // Update local state for immediate feedback
+      setUsers(users.map(u => u.id === form.id ? form : u)); 
+      // Push update to backend
+      if(googleScriptUrl) {
+         fetch(googleScriptUrl, { 
+             method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, 
+             body: JSON.stringify({ action: 'edit_user', user: form }) 
+         });
+      }
+      showToast("Data User Diperbarui", 'success');
+    } else { 
+      // Add new local state
+      setUsers([...users, { ...form, id: Date.now() }]); 
+      // Push addition to backend
+      if(googleScriptUrl) { 
+         fetch(googleScriptUrl, { 
+             method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, 
+             body: JSON.stringify({ action: 'manage_user', user: form }) 
+         }); 
+      } 
+      showToast("User Baru Tersimpan", 'success');
+    } 
+    setForm({ id: null, originalUsername: '', name: '', username: '', password: '', assignedKelurahan: '', role: 'user' }); 
+  }; 
+
+  const handleDelete = (id) => {
+    const userToDelete = users.find(u => u.id === id);
+    setUsers(users.filter(x => x.id !== id));
+    if(googleScriptUrl && userToDelete) {
+        fetch(googleScriptUrl, { 
+             method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, 
+             body: JSON.stringify({ action: 'delete_user', username: userToDelete.username }) 
+        });
+    }
+    showToast("User Dihapus", 'success');
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-slideIn">
+        <div className={`p-8 rounded-3xl border h-fit shadow-2xl ${isDark ? 'bg-[#1e293b]/90 border-white/10' : 'bg-white border-slate-200'}`}>
+            <h3 className="font-black text-xl mb-6 flex items-center gap-2">
+                <UserCog className="text-blue-500"/> {form.id ? 'Edit Akses' : 'Buat Akses Baru'}
+            </h3>
+            <form onSubmit={save} className="space-y-4">
+                <input required placeholder="Nama Lengkap Petugas" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} className={`w-full p-3 rounded-xl border outline-none text-sm font-medium ${isDark?'bg-black/20 border-white/10':'bg-slate-50'}`} />
+                <input required placeholder="Username (ID Login)" value={form.username} onChange={e=>setForm({...form, username:e.target.value})} className={`w-full p-3 rounded-xl border outline-none text-sm font-medium ${isDark?'bg-black/20 border-white/10':'bg-slate-50'}`} />
+                <input required placeholder="Kata Sandi" value={form.password} onChange={e=>setForm({...form, password:e.target.value})} className={`w-full p-3 rounded-xl border outline-none text-sm font-medium ${isDark?'bg-black/20 border-white/10':'bg-slate-50'}`} />
+                <select value={form.role} onChange={e=>setForm({...form, role:e.target.value})} className={`w-full p-3 rounded-xl border outline-none text-sm font-medium ${isDark?'bg-black/20 border-white/10':'bg-slate-50'}`}>
+                    <option value="user">Petugas Lapangan (User)</option>
+                    <option value="admin">Administrator (Admin)</option>
+                </select>
+                <input placeholder="Kunci Area (Cth: PLUIT)" value={form.assignedKelurahan} onChange={e=>setForm({...form, assignedKelurahan:e.target.value.toUpperCase()})} className={`w-full p-3 rounded-xl border outline-none text-sm font-medium uppercase ${isDark?'bg-black/20 border-white/10':'bg-slate-50'}`} />
+                <div className="flex gap-2">
+                    {form.id && <button type="button" onClick={() => setForm({ id: null, originalUsername: '', name: '', username: '', password: '', assignedKelurahan: '', role: 'user' })} className="py-3 px-4 mt-2 bg-slate-500/20 text-slate-400 rounded-xl font-bold">Batal</button>}
+                    <button type="submit" className="flex-1 py-3 mt-2 bg-blue-600 text-white rounded-xl font-bold shadow-lg">SIMPAN AKSES</button>
+                </div>
+            </form>
+        </div>
+        <div className="lg:col-span-2 space-y-4">
+            {users.map(u => (
+                <div key={u.id} className={`p-5 rounded-2xl border flex justify-between items-center transition ${isDark ? 'bg-[#1e293b]/50 border-white/5 hover:bg-[#1e293b]' : 'bg-white border-slate-200 shadow-sm'}`}>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-lg">{u.name}</h4>
+                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${u.role === 'admin' ? 'bg-orange-500/20 text-orange-500' : 'bg-blue-500/20 text-blue-500'}`}>{u.role}</span>
+                        </div>
+                        <p className="text-xs opacity-60 font-mono mt-1">@{u.username} | {u.assignedKelurahan || 'Akses Global'}</p>
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={() => setForm({...u, originalUsername: u.username})} className="p-2.5 bg-blue-500/10 text-blue-500 rounded-xl hover:bg-blue-500 hover:text-white transition"><Edit size={16}/></button>
+                        <button onClick={() => handleDelete(u.id)} className="p-2.5 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition"><Trash2 size={16}/></button>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+  ); 
+};
 
 export default App;
