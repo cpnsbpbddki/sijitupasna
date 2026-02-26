@@ -207,12 +207,12 @@ const App = () => {
           </span>
         </h1>
         <p className="text-lg md:text-xl text-slate-300 max-w-2xl mb-8 leading-relaxed">
-          Sistem Informasi Pengkajian Kebutuhan Pasca Bencana. Merupakan portal terpadu untuk pendataan, valuasi kerugian, dan manajemen aset terdampak di wilayah DKI Jakarta secara Real-Time.
+          Sistem Informasi Pengkajian Kebutuhan Pasca Bencana. Merupakan portal terpadu untuk pendataan, penilaian kerusakan dan kerugian pasca bencana di wilayah DKI Jakarta secara Real-Time.
         </p>
         <div className="flex flex-wrap gap-4 text-sm font-bold text-slate-400">
           <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><MapPin className="text-orange-500" size={16}/> Pemetaan Akurat</div>
-          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><Calculator className="text-blue-500" size={16}/> Kalkulasi Otomatis</div>
-          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><ShieldCheck className="text-emerald-500" size={16}/> Tersertifikasi</div>
+          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><Calculator className="text-blue-500" size={16}/> Perhitungan Otomatis</div>
+          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><ShieldCheck className="text-emerald-500" size={16}/>Akurasi Data</div>
         </div>
       </div>
 
@@ -223,7 +223,7 @@ const App = () => {
             <Lock className="text-white" size={28} />
           </div>
           <h2 className="text-2xl font-bold">Portal Masuk</h2>
-          <p className="text-sm text-slate-400 mt-1">Silakan otentikasi identitas Anda.</p>
+          <p className="text-sm text-slate-400 mt-1">Silakan Masukan User.</p>
         </div>
         
         {isLoadingInit ? (
@@ -236,7 +236,7 @@ const App = () => {
         )}
 
         <div className="mt-12 pt-6 border-t border-white/10 text-center">
-          <p className="text-[10px] text-slate-500 flex items-center justify-center gap-1"><Info size={12}/> Dukungan Teknis: Pusdatin BPBD DKI</p>
+          <p className="text-[10px] text-slate-500 flex items-center justify-center gap-1"><Info size={12}/>Subkel Penilaian Kerusakan - Bidang Rehabilitasi Rekonstruksi</p>
         </div>
       </div>
       
@@ -263,16 +263,16 @@ const App = () => {
         
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           <p className="px-4 text-[10px] font-bold uppercase opacity-40 mb-2 mt-2">Menu Utama</p>
-          <NavButton icon={LayoutDashboard} label="Dashboard Pusat" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
+          <NavButton icon={LayoutDashboard} label="Dashboard" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
           <NavButton icon={FileText} label="Input Assessment" active={currentView === 'input'} onClick={() => { setEditData(null); setCurrentView('input'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
-          <NavButton icon={User} label="Profil Petugas" active={currentView === 'profile'} onClick={() => { setCurrentView('profile'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
+          <NavButton icon={User} label="Profile Setting" active={currentView === 'profile'} onClick={() => { setCurrentView('profile'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
           
           {currentUser.role === 'admin' && (
             <>
               <div className="my-6 border-t border-white/5"></div>
               <p className="px-4 text-[10px] font-bold uppercase opacity-40 mb-2">Panel Admin</p>
-              <NavButton icon={UserCog} label="Manajemen Akses" active={currentView === 'users'} onClick={() => { setCurrentView('users'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
-              <NavButton icon={Megaphone} label="Siaran Pengumuman" active={currentView === 'notification'} onClick={() => { setCurrentView('notification'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
+              <NavButton icon={UserCog} label="Setting User" active={currentView === 'users'} onClick={() => { setCurrentView('users'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
+              <NavButton icon={Megaphone} label="Setting Announcement" active={currentView === 'notification'} onClick={() => { setCurrentView('notification'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
             </>
           )}
         </nav>
@@ -366,7 +366,7 @@ const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser,
   <div className="space-y-8 animate-fadeIn">
     {/* Headings */}
     <div>
-      <h2 className="text-3xl font-black tracking-tight">Dashboard Pemantauan</h2>
+      <h2 className="text-3xl font-black tracking-tight">Dashboard</h2>
       <p className="opacity-60 mt-1">Ringkasan data assessment bencana secara real-time.</p>
     </div>
 
@@ -638,7 +638,7 @@ const StatCard = ({ title, value, icon: Icon, color, isDark }) => <div className
 
 const UserProfile = ({ user, onUpdate, isDark }) => { 
   const [name, setName] = useState(user.name); const [pass, setPass] = useState(''); 
-  return (<div className={`max-w-md mx-auto p-8 rounded-3xl border shadow-2xl animate-slideIn mt-10 ${isDark ? 'bg-[#1e293b]/90 border-white/10 backdrop-blur-xl' : 'bg-white border-slate-200'}`}><div className="flex flex-col items-center mb-8"><div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-4xl font-black text-white mb-4 shadow-xl border-4 border-[#0f172a]">{user.name.charAt(0)}</div><h2 className="text-2xl font-black">Profil Petugas</h2><p className="opacity-60 text-sm font-mono mt-1">ID: @{user.username} | {user.assignedKelurahan || 'Admin Pusat'}</p></div><div className="space-y-5"><div><label className="text-[11px] font-bold uppercase opacity-50 tracking-widest mb-2 block">Nama Lengkap</label><input className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDark?'bg-black/20 border-white/10 focus:border-blue-500':'bg-slate-50 focus:border-blue-500'}`} value={name} onChange={e=>setName(e.target.value)} /></div><div><label className="text-[11px] font-bold uppercase opacity-50 tracking-widest mb-2 block">Ubah Kata Sandi (Opsional)</label><input type="password" placeholder="Kosongkan jika tidak ingin diubah" className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDark?'bg-black/20 border-white/10 focus:border-blue-500':'bg-slate-50 focus:border-blue-500'}`} value={pass} onChange={e=>setPass(e.target.value)} /></div><button onClick={() => {onUpdate({ name, password: pass || user.password }); setPass('');}} className="w-full py-4 mt-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-lg shadow-blue-500/20 transition">SIMPAN PEMBARUAN</button></div></div>); 
+  return (<div className={`max-w-md mx-auto p-8 rounded-3xl border shadow-2xl animate-slideIn mt-10 ${isDark ? 'bg-[#1e293b]/90 border-white/10 backdrop-blur-xl' : 'bg-white border-slate-200'}`}><div className="flex flex-col items-center mb-8"><div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-4xl font-black text-white mb-4 shadow-xl border-4 border-[#0f172a]">{user.name.charAt(0)}</div><h2 className="text-2xl font-black">Profile Setting</h2><p className="opacity-60 text-sm font-mono mt-1">ID: @{user.username} | {user.assignedKelurahan || 'Admin Pusat'}</p></div><div className="space-y-5"><div><label className="text-[11px] font-bold uppercase opacity-50 tracking-widest mb-2 block">Nama Lengkap</label><input className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDark?'bg-black/20 border-white/10 focus:border-blue-500':'bg-slate-50 focus:border-blue-500'}`} value={name} onChange={e=>setName(e.target.value)} /></div><div><label className="text-[11px] font-bold uppercase opacity-50 tracking-widest mb-2 block">Ubah Kata Sandi (Opsional)</label><input type="password" placeholder="Kosongkan jika tidak ingin diubah" className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDark?'bg-black/20 border-white/10 focus:border-blue-500':'bg-slate-50 focus:border-blue-500'}`} value={pass} onChange={e=>setPass(e.target.value)} /></div><button onClick={() => {onUpdate({ name, password: pass || user.password }); setPass('');}} className="w-full py-4 mt-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-lg shadow-blue-500/20 transition">SIMPAN PEMBARUAN</button></div></div>); 
 };
 
 // --- FIX: USER MANAGEMENT FORM WITH BACKEND COMMUNICATION ---
