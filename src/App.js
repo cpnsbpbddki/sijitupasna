@@ -236,7 +236,7 @@ const App = () => {
         )}
 
         <div className="mt-12 pt-6 border-t border-white/10 text-center">
-          <p className="text-[10px] text-slate-500 flex items-center justify-center gap-1"><Info size={12}/> Dukungan Teknis: Pusdatin BPBD DKI</p>
+          <p className="text-[10px] text-slate-500 flex items-center justify-center gap-1"><Info size={12}/> Hubungi Staff Bidang Rehabilitasi dan Rekonstruksi untuk mendaftar</p>
         </div>
       </div>
       
