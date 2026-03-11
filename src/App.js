@@ -162,7 +162,7 @@ const App = () => {
       const pageWidth = doc.internal.pageSize.getWidth();
       doc.setFillColor(249, 115, 22); // Orange BPBD
       doc.rect(0, 0, pageWidth, 25, 'F');
-      doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("LAPORAN SIJITUPASNA", pageWidth / 2, 12, null, null, "center");
+      doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("LAPORAN E-JITUPASNA", pageWidth / 2, 12, null, null, "center");
       doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text("BPBD PROVINSI DKI JAKARTA", pageWidth / 2, 19, null, null, "center");
       
       const s = data?.survivor || {};
@@ -201,18 +201,18 @@ const App = () => {
           </div>
         </div>
         <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-tight mb-4">
-          SIJITUPASNA <br/>
+          E-JITUPASNA <br/>
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-600">
-            BPBD DKI JAKARTA
+            SIAGA BENCANA
           </span>
         </h1>
         <p className="text-lg md:text-xl text-slate-300 max-w-2xl mb-8 leading-relaxed">
-          Sistem Informasi Pengkajian Kebutuhan Pasca Bencana. Merupakan portal terpadu untuk pendataan, penilaian kerusakan dan kerugian pasca bencana di wilayah DKI Jakarta secara Real-Time.
+          Sistem Informasi Pengkajian Kebutuhan Pasca Bencana. Merupakan portal terpadu untuk pendataan, valuasi kerugian, dan manajemen aset terdampak di wilayah DKI Jakarta secara Real-Time.
         </p>
         <div className="flex flex-wrap gap-4 text-sm font-bold text-slate-400">
           <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><MapPin className="text-orange-500" size={16}/> Pemetaan Akurat</div>
-          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><Calculator className="text-blue-500" size={16}/> Perhitungan Otomatis</div>
-          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><ShieldCheck className="text-emerald-500" size={16}/>Akurasi Data</div>
+          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><Calculator className="text-blue-500" size={16}/> Kalkulasi Otomatis</div>
+          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><ShieldCheck className="text-emerald-500" size={16}/> Tersertifikasi</div>
         </div>
       </div>
 
@@ -223,7 +223,7 @@ const App = () => {
             <Lock className="text-white" size={28} />
           </div>
           <h2 className="text-2xl font-bold">Portal Masuk</h2>
-          <p className="text-sm text-slate-400 mt-1">Silakan Masukan User.</p>
+          <p className="text-sm text-slate-400 mt-1">Silakan otentikasi identitas Anda.</p>
         </div>
         
         {isLoadingInit ? (
@@ -236,7 +236,7 @@ const App = () => {
         )}
 
         <div className="mt-12 pt-6 border-t border-white/10 text-center">
-          <p className="text-[10px] text-slate-500 flex items-center justify-center gap-1"><Info size={12}/>Subkel Penilaian Kerusakan - Bidang Rehabilitasi Rekonstruksi</p>
+          <p className="text-[10px] text-slate-500 flex items-center justify-center gap-1"><Info size={12}/> Dukungan Teknis: Pusdatin BPBD DKI</p>
         </div>
       </div>
       
@@ -255,7 +255,7 @@ const App = () => {
         <div className="h-20 flex items-center gap-3 px-6 border-b border-white/5">
           <MonasIcon className="w-10 h-10" />
           <div>
-            <h1 className="font-black text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">SIJITUPASNA</h1>
+            <h1 className="font-black text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">E-JITUPASNA</h1>
             <p className="text-[8px] font-bold opacity-60 uppercase tracking-widest">BPBD DKI JAKARTA</p>
           </div>
           <button onClick={() => setMobileMenuOpen(false)} className="md:hidden ml-auto"><X size={20}/></button>
@@ -263,16 +263,16 @@ const App = () => {
         
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           <p className="px-4 text-[10px] font-bold uppercase opacity-40 mb-2 mt-2">Menu Utama</p>
-          <NavButton icon={LayoutDashboard} label="Dashboard" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
+          <NavButton icon={LayoutDashboard} label="Dashboard Pusat" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
           <NavButton icon={FileText} label="Input Assessment" active={currentView === 'input'} onClick={() => { setEditData(null); setCurrentView('input'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
-          <NavButton icon={User} label="Profile Setting" active={currentView === 'profile'} onClick={() => { setCurrentView('profile'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
+          <NavButton icon={User} label="Profil Petugas" active={currentView === 'profile'} onClick={() => { setCurrentView('profile'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
           
           {currentUser.role === 'admin' && (
             <>
               <div className="my-6 border-t border-white/5"></div>
               <p className="px-4 text-[10px] font-bold uppercase opacity-40 mb-2">Panel Admin</p>
-              <NavButton icon={UserCog} label="Setting User" active={currentView === 'users'} onClick={() => { setCurrentView('users'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
-              <NavButton icon={Megaphone} label="Setting Announcement" active={currentView === 'notification'} onClick={() => { setCurrentView('notification'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
+              <NavButton icon={UserCog} label="Manajemen Akses" active={currentView === 'users'} onClick={() => { setCurrentView('users'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
+              <NavButton icon={Megaphone} label="Siaran Pengumuman" active={currentView === 'notification'} onClick={() => { setCurrentView('notification'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
             </>
           )}
         </nav>
@@ -314,7 +314,7 @@ const App = () => {
         {/* Mobile Navbar */}
         <div className={`md:hidden h-16 flex items-center px-4 border-b z-20 backdrop-blur-md ${theme === 'dark' ? 'border-white/10 bg-[#0f172a]/80' : 'border-slate-200 bg-white/80'}`}>
           <button onClick={() => setMobileMenuOpen(true)} className="p-2 -ml-2 rounded-lg bg-orange-500/10 text-orange-500"><Menu/></button>
-          <span className="font-black text-lg ml-3 text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">SIJITUPASNA</span>
+          <span className="font-black text-lg ml-3 text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">E-JITUPASNA</span>
         </div>
 
         {/* Scrollable Main View */}
@@ -366,7 +366,7 @@ const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser,
   <div className="space-y-8 animate-fadeIn">
     {/* Headings */}
     <div>
-      <h2 className="text-3xl font-black tracking-tight">Dashboard</h2>
+      <h2 className="text-3xl font-black tracking-tight">Dashboard Pemantauan</h2>
       <p className="opacity-60 mt-1">Ringkasan data assessment bencana secara real-time.</p>
     </div>
 
@@ -478,7 +478,39 @@ const InputForm = ({ user, isDark, onSuccess, googleScriptUrl, editData, onCance
   const addFamily = () => setFamilies([...families, { id: Date.now(), nama: '', kerja: '', jmlAnggota: '', jmlSekolah: '', gaji: '', hari: '', rugi: 0 }]);
   const updateFamily = (id, field, val) => { setFamilies(families.map(f => { if(f.id === id) { const up = { ...f, [field]: val }; if(field === 'gaji' || field === 'hari') up.rugi = (parseFloat(up.gaji)||0) * (parseFloat(up.hari)||0); return up; } return f; })); };
   const handleFileChange = async (e) => { const files = Array.from(e.target.files); const base64Files = await Promise.all(files.map(file => new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve({ name: file.name, type: file.type, data: reader.result.split(',')[1] }); reader.onerror = reject; }))); setBuilding(prev => ({ ...prev, foto: [...prev.foto, ...base64Files] })); };
-  const handleConfirmSubmit = () => { setShowConfirm(false); setIsSubmitting(true); const action = editData ? 'edit_report' : 'submit_report'; const payload = { action, originalTimestamp: editData?.timestamp, timestamp: editData?.timestamp || new Date().toISOString(), surveyor: user.username, survivor, building, families, assets: { totalKerugian: assetLoss, notes }, photos: building.foto }; if (googleScriptUrl) fetch(googleScriptUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) }).then(() => { setIsSubmitting(false); onSuccess(); }).catch(err => { console.error(err); setIsSubmitting(false); }); };
+  
+  // --- TAMBAHAN BARU: Validasi sebelum Konfirmasi ---
+  const handlePreSubmit = () => {
+    if (!survivor.nama) { alert("Nama Pemilik wajib diisi!"); setActiveTab('A'); return; }
+    if (!survivor.kelurahan) { alert("Kelurahan wajib diisi!"); setActiveTab('A'); return; }
+    if (!survivor.lat || !survivor.lng) { alert("Mohon ambil Koordinat GPS terlebih dahulu!"); setActiveTab('A'); return; }
+    setShowConfirm(true);
+  };
+
+  const handleConfirmSubmit = () => { 
+    setShowConfirm(false); setIsSubmitting(true); 
+    const action = editData ? 'edit_report' : 'submit_report'; 
+    const payload = { action, originalTimestamp: editData?.timestamp, timestamp: editData?.timestamp || new Date().toISOString(), surveyor: user.username, survivor, building, families, assets: { totalKerugian: assetLoss, notes }, photos: building.foto }; 
+    
+    // --- PERBAIKAN: Pengecekan URL & Error Handling yang lebih baik ---
+    if (googleScriptUrl && googleScriptUrl.startsWith("http")) { 
+      fetch(googleScriptUrl, { 
+        method: 'POST', 
+        mode: 'no-cors', 
+        headers: { 'Content-Type': 'text/plain' }, 
+        body: JSON.stringify(payload) 
+      }).then(() => { 
+        setIsSubmitting(false); onSuccess(); 
+      }).catch(err => { 
+        console.error(err); 
+        setIsSubmitting(false); 
+        alert("Koneksi gagal. Periksa jaringan internet Anda atau ukuran foto terlalu besar."); 
+      }); 
+    } else {
+      alert("URL Server Database belum dikonfigurasi! Hubungi Admin.");
+      setIsSubmitting(false);
+    }
+  };
   
   const inputClass = `w-full p-4 rounded-xl border-2 outline-none transition duration-300 font-medium ${isDark ? 'bg-[#0b1120] border-white/10 focus:border-orange-500 text-white' : 'bg-slate-50 border-slate-200 focus:border-orange-500 text-slate-900'}`;
   const labelClass = "text-[11px] font-bold uppercase opacity-50 tracking-widest mb-2 block";
@@ -618,7 +650,7 @@ const InputForm = ({ user, isDark, onSuccess, googleScriptUrl, editData, onCance
            {activeTab !== 'C' ? (
              <button type="button" onClick={() => setActiveTab(prev => prev === 'A' ? 'B' : 'C')} className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-orange-500/20 hover:scale-105 transition">LANJUTKAN &rarr;</button>
            ) : (
-             <button type="button" onClick={() => setShowConfirm(true)} disabled={isSubmitting} className={`bg-gradient-to-r from-orange-500 to-red-600 text-white px-10 py-4 rounded-xl font-black shadow-xl shadow-orange-500/30 flex items-center gap-3 transition ${isSubmitting ? 'opacity-50' : 'hover:scale-105'}`}>
+             <button type="button" onClick={handlePreSubmit} disabled={isSubmitting} className={`bg-gradient-to-r from-orange-500 to-red-600 text-white px-10 py-4 rounded-xl font-black shadow-xl shadow-orange-500/30 flex items-center gap-3 transition ${isSubmitting ? 'opacity-50' : 'hover:scale-105'}`}>
                 {isSubmitting ? <><Loader2 className="animate-spin" size={20}/> MEMPROSES...</> : <><Save size={20}/> {editData ? 'SIMPAN PEMBARUAN' : 'KIRIM LAPORAN'}</>}
              </button>
            )}
@@ -638,7 +670,7 @@ const StatCard = ({ title, value, icon: Icon, color, isDark }) => <div className
 
 const UserProfile = ({ user, onUpdate, isDark }) => { 
   const [name, setName] = useState(user.name); const [pass, setPass] = useState(''); 
-  return (<div className={`max-w-md mx-auto p-8 rounded-3xl border shadow-2xl animate-slideIn mt-10 ${isDark ? 'bg-[#1e293b]/90 border-white/10 backdrop-blur-xl' : 'bg-white border-slate-200'}`}><div className="flex flex-col items-center mb-8"><div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-4xl font-black text-white mb-4 shadow-xl border-4 border-[#0f172a]">{user.name.charAt(0)}</div><h2 className="text-2xl font-black">Profile Setting</h2><p className="opacity-60 text-sm font-mono mt-1">ID: @{user.username} | {user.assignedKelurahan || 'Admin Pusat'}</p></div><div className="space-y-5"><div><label className="text-[11px] font-bold uppercase opacity-50 tracking-widest mb-2 block">Nama Lengkap</label><input className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDark?'bg-black/20 border-white/10 focus:border-blue-500':'bg-slate-50 focus:border-blue-500'}`} value={name} onChange={e=>setName(e.target.value)} /></div><div><label className="text-[11px] font-bold uppercase opacity-50 tracking-widest mb-2 block">Ubah Kata Sandi (Opsional)</label><input type="password" placeholder="Kosongkan jika tidak ingin diubah" className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDark?'bg-black/20 border-white/10 focus:border-blue-500':'bg-slate-50 focus:border-blue-500'}`} value={pass} onChange={e=>setPass(e.target.value)} /></div><button onClick={() => {onUpdate({ name, password: pass || user.password }); setPass('');}} className="w-full py-4 mt-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-lg shadow-blue-500/20 transition">SIMPAN PEMBARUAN</button></div></div>); 
+  return (<div className={`max-w-md mx-auto p-8 rounded-3xl border shadow-2xl animate-slideIn mt-10 ${isDark ? 'bg-[#1e293b]/90 border-white/10 backdrop-blur-xl' : 'bg-white border-slate-200'}`}><div className="flex flex-col items-center mb-8"><div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-4xl font-black text-white mb-4 shadow-xl border-4 border-[#0f172a]">{user.name.charAt(0)}</div><h2 className="text-2xl font-black">Profil Petugas</h2><p className="opacity-60 text-sm font-mono mt-1">ID: @{user.username} | {user.assignedKelurahan || 'Admin Pusat'}</p></div><div className="space-y-5"><div><label className="text-[11px] font-bold uppercase opacity-50 tracking-widest mb-2 block">Nama Lengkap</label><input className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDark?'bg-black/20 border-white/10 focus:border-blue-500':'bg-slate-50 focus:border-blue-500'}`} value={name} onChange={e=>setName(e.target.value)} /></div><div><label className="text-[11px] font-bold uppercase opacity-50 tracking-widest mb-2 block">Ubah Kata Sandi (Opsional)</label><input type="password" placeholder="Kosongkan jika tidak ingin diubah" className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDark?'bg-black/20 border-white/10 focus:border-blue-500':'bg-slate-50 focus:border-blue-500'}`} value={pass} onChange={e=>setPass(e.target.value)} /></div><button onClick={() => {onUpdate({ name, password: pass || user.password }); setPass('');}} className="w-full py-4 mt-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-lg shadow-blue-500/20 transition">SIMPAN PEMBARUAN</button></div></div>); 
 };
 
 // --- FIX: USER MANAGEMENT FORM WITH BACKEND COMMUNICATION ---
