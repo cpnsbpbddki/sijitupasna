@@ -5,7 +5,7 @@ import {
   Menu, X, ShieldCheck, Activity, Database, TrendingUp, Signal, 
   KeyRound, ChevronRight, ChevronLeft, GraduationCap, Layers, Box, CheckCircle, 
   XCircle, Loader2, Edit, ExternalLink, RefreshCw, Megaphone,
-  Landmark, Calculator, FileDown, FileSpreadsheet, Printer, User, Info
+  Landmark, Calculator, FileDown, FileSpreadsheet, Printer, User, Info, Image as ImageIcon
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -13,12 +13,12 @@ import 'jspdf-autotable';
 // --- MASUKKAN URL GOOGLE SCRIPT ANDA DI SINI ---
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyALLV9OE3FfyrTA2H92nbUdcVu1_tQfBYjidpgUizuJhSEzOvw46BAkl8wGbK8FxeXQg/exec"; 
 
-// --- HELPER: Mengubah URL Google Drive menjadi Direct Image Link ---
+// --- HELPER: MENGUBAH URL DRIVE AGAR BISA DITAMPILKAN SEBAGAI GAMBAR ---
 const getDirectImageUrl = (url) => {
   if (!url) return '';
-  // Ekstrak ID Google Drive dari URL
   const match = String(url).match(/\/d\/([a-zA-Z0-9_-]+)/);
   if (match && match[1]) {
+    // Memaksa Google Drive memberikan akses export gambar secara langsung
     return `https://drive.google.com/uc?export=view&id=${match[1]}`;
   }
   return url;
@@ -143,7 +143,6 @@ const App = () => {
                 role: currentUser.role
             }) 
         }).catch(err => {
-            console.error("Gagal menghapus di server", err);
             showToast("Koneksi bermasalah saat menghapus di server", "error");
             fetchReports(); 
         });
@@ -170,9 +169,9 @@ const App = () => {
     const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", `REKAP_JITUPASNA_${new Date().toLocaleDateString()}.csv`); document.body.appendChild(link); link.click();
   };
 
-  // --- EXPORT PDF (DENGAN GAMBAR) ---
+  // --- EXPORT PDF (DENGAN GAMBAR EMBEDDED) ---
   const generatePDF = async (data) => {
-    showToast("Mempersiapkan PDF & Mengunduh Foto... Mohon tunggu", "success");
+    showToast("Mempersiapkan PDF & Menyisipkan Foto... Mohon tunggu", "success");
     
     try {
       const doc = new jsPDF();
@@ -201,10 +200,10 @@ const App = () => {
         currentY += 10;
       }
 
-      // --- PEMROSESAN GAMBAR KE PDF ---
+      // --- RENDER GAMBAR KE PDF ---
       if (data?.photos) { 
         doc.setFontSize(10); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
-        doc.text("Lampiran Foto Dokumentasi:", 14, currentY); 
+        doc.text("Dokumentasi Lapangan:", 14, currentY); 
         doc.setFont("helvetica", "normal");
         currentY += 8;
 
@@ -213,56 +212,44 @@ const App = () => {
         for (let i = 0; i < links.length; i++) {
           const rawUrl = getDirectImageUrl(links[i]);
           try {
-            // Gunakan API Proxy AllOrigins untuk bypass CORS Google Drive
+            // Bypass CORS limitation menggunakan AllOrigins proxy
             const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`;
-            
             const img = new Image();
             img.crossOrigin = "Anonymous";
             
-            // Tunggu gambar ter-load
             await new Promise((resolve, reject) => {
               img.onload = resolve;
               img.onerror = reject;
               img.src = proxyUrl;
             });
 
-            // Kalkulasi Ukuran Gambar (Maksimal lebar 170)
-            const maxW = 170;
+            // Kalkulasi Ukuran Gambar (Maks lebar 160)
+            const maxW = 160;
             const ratio = img.height / img.width;
             let w = maxW;
             let h = maxW * ratio;
-            
-            // Jika gambar terlalu tinggi (potrait), batasi tingginya
-            if (h > 120) { h = 120; w = h / ratio; }
+            if (h > 100) { h = 100; w = h / ratio; }
 
-            // Pengecekan sisa halaman, buat halaman baru jika tidak muat
-            if (currentY + h > 280) {
-                doc.addPage();
-                currentY = 20;
-            }
+            // Buat halaman baru jika gambar tidak muat
+            if (currentY + h > 280) { doc.addPage(); currentY = 20; }
 
-            // Konversi gambar menjadi base64 Canvas untuk jsPDF
             const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
+            canvas.width = img.width; canvas.height = img.height;
             canvas.getContext('2d').drawImage(img, 0, 0);
             const imgData = canvas.toDataURL('image/jpeg');
 
-            // Tengah-kan posisi X
             const xPos = (pageWidth - w) / 2;
             doc.addImage(imgData, 'JPEG', xPos, currentY, w, h);
             
-            // Tambahkan text index di bawah gambar
             currentY += h + 5;
             doc.setFontSize(8); doc.setTextColor(100, 100, 100);
-            doc.text(`Gambar ${i+1}`, pageWidth / 2, currentY, null, null, "center");
-            
+            doc.text(`[Gambar ${i+1}]`, pageWidth / 2, currentY, null, null, "center");
             currentY += 10;
           } catch (e) {
-            console.warn("Gagal render gambar ke PDF", e);
-            // Fallback: Jika gagal di-load, tampilkan Link text biru
+            // Fallback jika proxy/cors gagal: munculkan tautan biru
+            console.warn("Gagal merender gambar ke PDF, memunculkan link alternatif.", e);
             doc.setFontSize(10); doc.setTextColor(37, 99, 235); 
-            doc.textWithLink(`- Gagal memuat foto. Klik di sini untuk membuka Foto ${i+1}`, 14, currentY, { url: links[i] }); 
+            doc.textWithLink(`- Klik di sini untuk membuka Bukti Foto ${i+1}`, 14, currentY, { url: links[i] }); 
             doc.setTextColor(0, 0, 0);
             currentY += 8;
           }
@@ -271,10 +258,7 @@ const App = () => {
       
       doc.save(`Laporan_${s.nama || 'TanpaNama'}.pdf`);
       showToast("PDF Berhasil Diunduh!", "success");
-    } catch (e) { 
-      console.error(e); 
-      showToast("Gagal membuat PDF", "error"); 
-    }
+    } catch (e) { console.error(e); showToast("Gagal memproses PDF", "error"); }
   };
 
   if (!currentUser) return (
@@ -441,21 +425,14 @@ const LoginScreenLogic = ({ users, onLogin, onFail }) => {
   );
 };
 
-// --- PHOTO VIEWER MODAL (NEW COMPONENT) ---
-const PhotoViewerModal = ({ photos, onClose, isDark }) => {
+// --- MODAL VIEWER FOTO DENGAN NAVIGASI SLIDE ---
+const PhotoViewerModal = ({ photos, onClose }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   if (!photos || photos.length === 0) return null;
 
-  const nextPhoto = (e) => {
-    e.stopPropagation();
-    setCurrentIndex((prev) => (prev + 1) % photos.length);
-  };
-  
-  const prevPhoto = (e) => {
-    e.stopPropagation();
-    setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length);
-  };
+  const nextPhoto = (e) => { e.stopPropagation(); setCurrentIndex((prev) => (prev + 1) % photos.length); };
+  const prevPhoto = (e) => { e.stopPropagation(); setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length); };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
@@ -471,6 +448,7 @@ const PhotoViewerModal = ({ photos, onClose, isDark }) => {
             src={getDirectImageUrl(photos[currentIndex])} 
             alt={`Dokumentasi ${currentIndex + 1}`} 
             className="max-w-full max-h-full object-contain" 
+            onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/600x400.png?text=Preview+Gagal.+Klik+Tombol+Buka+Asli"; }}
           />
 
           {photos.length > 1 && (
@@ -485,36 +463,38 @@ const PhotoViewerModal = ({ photos, onClose, isDark }) => {
           )}
         </div>
 
-        {photos.length > 1 && (
-          <div className="mt-4 flex items-center gap-3 bg-black/60 px-5 py-2 rounded-full border border-white/20 text-white font-bold tracking-widest shadow-lg">
-            {currentIndex + 1} / {photos.length}
-          </div>
-        )}
+        <div className="mt-4 flex items-center gap-4">
+          {photos.length > 1 && (
+            <div className="bg-black/60 px-5 py-2 rounded-full border border-white/20 text-white font-bold tracking-widest shadow-lg">
+              {currentIndex + 1} / {photos.length}
+            </div>
+          )}
+          <a href={photos[currentIndex]} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-full font-bold transition shadow-lg border border-blue-400/30">
+            <ExternalLink size={16}/> Buka Tab Baru
+          </a>
+        </div>
       </div>
     </div>
   );
 };
 
-// --- DASHBOARD VIEW WITH DELETE & PHOTO VIEWER FEATURE ---
+// --- DASHBOARD VIEW ---
 const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser, onEdit, onDelete, onExportCSV, onPrintPDF }) => {
   const [viewPhotos, setViewPhotos] = useState(null);
 
   return (
     <div className="space-y-8 animate-fadeIn">
-      {/* Headings */}
       <div>
         <h2 className="text-3xl font-black tracking-tight">Dashboard Pemantauan</h2>
         <p className="opacity-60 mt-1">Ringkasan data assessment bencana secara real-time.</p>
       </div>
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard title="Total Laporan" value={stats.totalData} icon={Database} color="blue" isDark={isDark} />
         <StatCard title="Total Valuasi Kerugian" value={`Rp ${(stats.totalLoss/1000000).toFixed(0)} Juta`} icon={Calculator} color="orange" isDark={isDark} />
         <StatCard title="Status Jaringan" value="Terhubung" icon={Signal} color="emerald" isDark={isDark} />
       </div>
 
-      {/* Main Data Table */}
       <div className={`rounded-3xl border overflow-hidden ${isDark ? 'bg-[#1e293b]/80 border-white/10 backdrop-blur-xl' : 'bg-white shadow-2xl border-slate-200'}`}>
         <div className="p-6 border-b border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -527,7 +507,7 @@ const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser,
               </button>
               {currentUser.role === 'admin' && (
                 <button onClick={onExportCSV} className="flex-1 md:flex-none flex justify-center items-center gap-2 text-sm bg-emerald-500/10 text-emerald-500 px-4 py-2.5 rounded-xl font-bold hover:bg-emerald-500/20 transition">
-                  <FileSpreadsheet size={16} /> Export Data (.csv)
+                  <FileSpreadsheet size={16} /> Export (.csv)
                 </button>
               )}
           </div>
@@ -549,6 +529,7 @@ const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser,
               {reports.length === 0 ? (
                 <tr><td colSpan="6" className="px-6 py-10 text-center opacity-50 italic">Belum ada data laporan yang direkam.</td></tr>
               ) : reports.map((row, idx) => {
+                // Parser array foto yang aman
                 const photoArray = row?.photos ? String(row.photos).split(/\r?\n|,/).filter(p => p.trim() !== '') : [];
 
                 return (
@@ -575,22 +556,20 @@ const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser,
                   </td>
                   <td className="px-6 py-4">
                     {photoArray.length > 0 ? (
-                      <button onClick={() => setViewPhotos(photoArray)} className="flex items-center gap-1.5 text-blue-500 hover:text-blue-400 font-semibold text-xs bg-blue-500/10 px-3 py-1.5 rounded-lg w-fit transition">
-                        <Camera size={14}/> Lihat Foto ({photoArray.length})
+                      <button onClick={() => setViewPhotos(photoArray)} className="flex items-center gap-1.5 text-white font-semibold text-xs bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2 rounded-lg w-fit transition shadow-lg shadow-blue-500/30 hover:scale-105">
+                        <ImageIcon size={14}/> Lihat Foto ({photoArray.length})
                       </button>
-                    ) : <span className="text-xs opacity-30 italic">Tanpa Foto</span>}
+                    ) : <span className="text-xs opacity-40 italic flex items-center gap-1"><AlertTriangle size={12}/> Tanpa Foto</span>}
                   </td>
                   <td className="px-6 py-4 flex justify-end gap-2">
                     <button onClick={() => onPrintPDF(row)} className="p-2 bg-orange-500/10 text-orange-500 rounded-lg hover:bg-orange-500 hover:text-white transition" title="Unduh PDF Resmi">
                       <Printer size={18}/>
                     </button>
-                    {/* EDIT BUTTON */}
                     {(currentUser.role === 'admin' || currentUser.username === row?.surveyor) && (
                       <button onClick={() => onEdit(row)} className="p-2 bg-blue-500/10 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition" title="Koreksi Data">
                         <Edit size={18}/>
                       </button>
                     )}
-                    {/* TOMBOL HAPUS DATA */}
                     {(currentUser.role === 'admin' || currentUser.username === row?.surveyor) && (
                       <button onClick={() => onDelete(row.timestamp)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition" title="Hapus Permanen">
                         <Trash2 size={18}/>
@@ -604,19 +583,17 @@ const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser,
         </div>
       </div>
 
-      {/* Render Modal Pop-up Foto */}
+      {/* RENDER MODAL POP-UP FOTO JIKA AKTIF */}
       {viewPhotos && (
         <PhotoViewerModal 
           photos={viewPhotos} 
           onClose={() => setViewPhotos(null)} 
-          isDark={isDark} 
         />
       )}
     </div>
   );
 };
 
-// --- INPUT FORM (POLISHED UI) ---
 const InputForm = ({ user, isDark, onSuccess, googleScriptUrl, editData, onCancelEdit }) => {
   const [activeTab, setActiveTab] = useState('A'); 
   const [isSubmitting, setIsSubmitting] = useState(false); 
@@ -634,7 +611,17 @@ const InputForm = ({ user, isDark, onSuccess, googleScriptUrl, editData, onCance
   const handleGetLocation = () => { if(navigator.geolocation) navigator.geolocation.getCurrentPosition((pos) => { setSurvivor(prev => ({ ...prev, lat: pos.coords.latitude.toFixed(6), lng: pos.coords.longitude.toFixed(6) })); setLocked(true); }, () => alert("Gagal mendapatkan GPS.")); };
   const addFamily = () => setFamilies([...families, { id: Date.now(), nama: '', kerja: '', jmlAnggota: '', jmlSekolah: '', gaji: '', hari: '', rugi: 0 }]);
   const updateFamily = (id, field, val) => { setFamilies(families.map(f => { if(f.id === id) { const up = { ...f, [field]: val }; if(field === 'gaji' || field === 'hari') up.rugi = (parseFloat(up.gaji)||0) * (parseFloat(up.hari)||0); return up; } return f; })); };
-  const handleFileChange = async (e) => { const files = Array.from(e.target.files); const base64Files = await Promise.all(files.map(file => new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve({ name: file.name, type: file.type, data: reader.result.split(',')[1] }); reader.onerror = reject; }))); setBuilding(prev => ({ ...prev, foto: [...prev.foto, ...base64Files] })); };
+  
+  const handleFileChange = async (e) => { 
+    const files = Array.from(e.target.files); 
+    const base64Files = await Promise.all(files.map(file => new Promise((resolve, reject) => { 
+      const reader = new FileReader(); 
+      reader.readAsDataURL(file); 
+      reader.onload = () => resolve({ name: file.name, type: file.type, data: reader.result.split(',')[1] }); 
+      reader.onerror = reject; 
+    }))); 
+    setBuilding(prev => ({ ...prev, foto: [...(prev.foto || []), ...base64Files] })); 
+  };
   
   const handlePreSubmit = () => {
     if (!survivor.nama) { alert("Nama Pemilik wajib diisi!"); setActiveTab('A'); return; }
@@ -723,14 +710,14 @@ const InputForm = ({ user, isDark, onSuccess, googleScriptUrl, editData, onCance
              <div><label className={labelClass}>Rincian Aset Terdampak (Perabotan/Elektronik)</label><textarea value={building.asetTerdampak} onChange={e => setBuilding({...building, asetTerdampak: e.target.value})} className={inputClass} rows="3" placeholder="Sebutkan barang yang rusak (Contoh: Kulkas, 2 Kasur, Lemari Kayu)"/></div>
              <div>
                <label className={labelClass}>Unggah Dokumentasi Foto (Multiple)</label>
-               <div className={`border-2 border-dashed rounded-2xl p-10 text-center hover:border-orange-500 cursor-pointer transition ${isDark?'border-white/20 bg-[#0b1120]':'border-slate-300 bg-slate-50'}`}>
-                 <input type="file" multiple onChange={handleFileChange} className="hidden" id="fup"/>
-                 <label htmlFor="fup" className="cursor-pointer flex flex-col items-center">
-                   <div className="w-16 h-16 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center mb-4"><Camera size={32}/></div>
-                   <p className="font-bold text-lg">{editData ? 'Timpa Dengan Foto Baru' : 'Sentuh untuk Unggah Foto'}</p>
+               <div className={`border-2 border-dashed rounded-2xl p-10 text-center hover:border-orange-500 cursor-pointer transition relative overflow-hidden ${isDark?'border-white/20 bg-[#0b1120]':'border-slate-300 bg-slate-50'}`}>
+                 <input type="file" multiple accept="image/*" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                 <div className="flex flex-col items-center pointer-events-none">
+                   <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-full flex items-center justify-center mb-4 shadow-lg"><Camera size={32}/></div>
+                   <p className="font-bold text-lg">{editData ? 'Tambah Foto Baru' : 'Sentuh untuk Unggah Foto'}</p>
                    <p className="text-xs opacity-50 mt-2">Dukung format JPG/PNG</p>
-                   {building.foto.length>0 && <p className="text-sm text-emerald-500 font-bold mt-4 bg-emerald-500/10 px-4 py-2 rounded-full">{building.foto.length} Foto Siap Dikirim ✓</p>}
-                 </label>
+                   {building.foto && building.foto.length > 0 && <p className="text-sm text-emerald-500 font-bold mt-4 bg-emerald-500/10 px-4 py-2 rounded-full border border-emerald-500/20">{building.foto.length} Foto Siap Dikirim ✓</p>}
+                 </div>
                </div>
              </div>
           </div>
