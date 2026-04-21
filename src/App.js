@@ -3,7 +3,7 @@ import {
   LayoutDashboard, FileText, UserCog, MapPin, Building, Users, Save, 
   Lock, Camera, Trash2, Plus, AlertTriangle, Sun, Moon, LogOut, 
   Menu, X, ShieldCheck, Activity, Database, TrendingUp, Signal, 
-  KeyRound, ChevronRight, GraduationCap, Layers, Box, CheckCircle, 
+  KeyRound, ChevronRight, ChevronLeft, GraduationCap, Layers, Box, CheckCircle, 
   XCircle, Loader2, Edit, ExternalLink, RefreshCw, Megaphone,
   Landmark, Calculator, FileDown, FileSpreadsheet, Printer, User, Info
 } from 'lucide-react';
@@ -349,110 +349,180 @@ const LoginScreenLogic = ({ users, onLogin, onFail }) => {
   );
 };
 
-// --- DASHBOARD VIEW WITH DELETE FEATURE ---
-const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser, onEdit, onDelete, onExportCSV, onPrintPDF }) => (
-  <div className="space-y-8 animate-fadeIn">
-    {/* Headings */}
-    <div>
-      <h2 className="text-3xl font-black tracking-tight">Dashboard Pemantauan</h2>
-      <p className="opacity-60 mt-1">Ringkasan data assessment bencana secara real-time.</p>
-    </div>
+// --- PHOTO VIEWER MODAL (NEW COMPONENT) ---
+const PhotoViewerModal = ({ photos, onClose, isDark }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-    {/* Stat Cards */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <StatCard title="Total Laporan" value={stats.totalData} icon={Database} color="blue" isDark={isDark} />
-      <StatCard title="Total Valuasi Kerugian" value={`Rp ${(stats.totalLoss/1000000).toFixed(0)} Juta`} icon={Calculator} color="orange" isDark={isDark} />
-      <StatCard title="Status Jaringan" value="Terhubung" icon={Signal} color="emerald" isDark={isDark} />
-    </div>
+  if (!photos || photos.length === 0) return null;
 
-    {/* Main Data Table */}
-    <div className={`rounded-3xl border overflow-hidden ${isDark ? 'bg-[#1e293b]/80 border-white/10 backdrop-blur-xl' : 'bg-white shadow-2xl border-slate-200'}`}>
-      <div className="p-6 border-b border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h3 className="font-bold text-xl flex items-center gap-2"><Activity className="text-orange-500"/> Log Input Terkini</h3>
-          <p className="text-xs opacity-50 mt-1">Menampilkan seluruh data masuk dari surveyor lapangan.</p>
-        </div>
-        <div className="flex flex-wrap gap-2 w-full md:w-auto">
-            <button onClick={onSync} disabled={isSyncing} className={`flex-1 md:flex-none flex justify-center items-center gap-2 text-sm bg-blue-500/10 text-blue-500 px-4 py-2.5 rounded-xl font-bold hover:bg-blue-500/20 transition ${isSyncing ? 'opacity-50' : ''}`}>
-              {isSyncing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} Refresh
-            </button>
-            {currentUser.role === 'admin' && (
-              <button onClick={onExportCSV} className="flex-1 md:flex-none flex justify-center items-center gap-2 text-sm bg-emerald-500/10 text-emerald-500 px-4 py-2.5 rounded-xl font-bold hover:bg-emerald-500/20 transition">
-                <FileSpreadsheet size={16} /> Export Data (.csv)
+  const nextPhoto = (e) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev + 1) % photos.length);
+  };
+  
+  const prevPhoto = (e) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
+      <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onClose}></div>
+      <div className="relative z-10 w-full max-w-5xl h-full max-h-[85vh] flex flex-col items-center justify-center">
+        
+        <button onClick={onClose} className="absolute -top-4 right-0 md:-right-4 md:-top-4 text-white p-2 bg-red-500/80 hover:bg-red-500 rounded-full transition z-20">
+          <X size={24} />
+        </button>
+
+        <div className="relative w-full h-full bg-black/50 rounded-2xl overflow-hidden border border-white/20 shadow-2xl flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          <img 
+            src={photos[currentIndex]} 
+            alt={`Dokumentasi ${currentIndex + 1}`} 
+            className="max-w-full max-h-full object-contain" 
+          />
+
+          {photos.length > 1 && (
+            <>
+              <button onClick={prevPhoto} className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-black/60 text-white rounded-full hover:bg-orange-500 transition shadow-lg border border-white/10">
+                <ChevronLeft size={28} />
               </button>
-            )}
+              <button onClick={nextPhoto} className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-black/60 text-white rounded-full hover:bg-orange-500 transition shadow-lg border border-white/10">
+                <ChevronRight size={28} />
+              </button>
+            </>
+          )}
         </div>
-      </div>
-      
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left whitespace-nowrap">
-          <thead className={`text-xs uppercase font-bold tracking-wider ${isDark ? 'bg-black/30 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
-            <tr>
-              <th className="px-6 py-5">Identitas Pemilik</th>
-              <th className="px-6 py-5">Lokasi Kejadian</th>
-              <th className="px-6 py-5">Dimensi / Luas</th>
-              <th className="px-6 py-5">Tingkat Kerusakan</th>
-              <th className="px-6 py-5">Dokumentasi</th>
-              <th className="px-6 py-5 text-right">Tindakan</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {reports.length === 0 ? (
-              <tr><td colSpan="6" className="px-6 py-10 text-center opacity-50 italic">Belum ada data laporan yang direkam.</td></tr>
-            ) : reports.map((row, idx) => (
-              <tr key={idx} className={`transition duration-200 ${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
-                <td className="px-6 py-4">
-                  <div className="font-bold text-base">{row?.survivor?.nama || 'Tanpa Nama'}</div>
-                  <div className="text-[10px] opacity-60 flex items-center gap-1 mt-1"><UserCog size={10}/> Petugas: {row?.surveyor || '-'}</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="font-semibold text-sm">Kel. {row?.survivor?.kelurahan || '-'}</div>
-                  <div className="text-[11px] opacity-60 mt-1">RT {row?.survivor?.rt || '-'} / RW {row?.survivor?.rw || '-'}</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="font-mono bg-slate-500/10 px-2 py-1 rounded text-xs inline-block border border-slate-500/20">{row?.building?.luas || 0} m²</div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${
-                    row?.building?.kerusakan === 'rusak' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
-                    row?.building?.kerusakan === 'sedang' ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' : 
-                    'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                  }`}>
-                    {row?.building?.kerusakan || '-'}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  {row?.photos ? (
-                    <a href={row.photos.split('\n')[0]} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-blue-500 hover:text-blue-400 font-semibold text-xs bg-blue-500/10 px-3 py-1.5 rounded-lg w-fit transition">
-                      <Camera size={14}/> Lihat Foto
-                    </a>
-                  ) : <span className="text-xs opacity-30 italic">Tanpa Foto</span>}
-                </td>
-                <td className="px-6 py-4 flex justify-end gap-2">
-                  <button onClick={() => onPrintPDF(row)} className="p-2 bg-orange-500/10 text-orange-500 rounded-lg hover:bg-orange-500 hover:text-white transition" title="Unduh PDF Resmi">
-                    <Printer size={18}/>
-                  </button>
-                  {/* EDIT BUTTON */}
-                  {(currentUser.role === 'admin' || currentUser.username === row?.surveyor) && (
-                    <button onClick={() => onEdit(row)} className="p-2 bg-blue-500/10 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition" title="Koreksi Data">
-                      <Edit size={18}/>
-                    </button>
-                  )}
-                  {/* TOMBOL HAPUS DATA */}
-                  {(currentUser.role === 'admin' || currentUser.username === row?.surveyor) && (
-                    <button onClick={() => onDelete(row.timestamp)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition" title="Hapus Permanen">
-                      <Trash2 size={18}/>
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+        {photos.length > 1 && (
+          <div className="mt-4 flex items-center gap-3 bg-black/60 px-5 py-2 rounded-full border border-white/20 text-white font-bold tracking-widest shadow-lg">
+            {currentIndex + 1} / {photos.length}
+          </div>
+        )}
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+// --- DASHBOARD VIEW WITH DELETE & PHOTO VIEWER FEATURE ---
+const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser, onEdit, onDelete, onExportCSV, onPrintPDF }) => {
+  const [viewPhotos, setViewPhotos] = useState(null);
+
+  return (
+    <div className="space-y-8 animate-fadeIn">
+      {/* Headings */}
+      <div>
+        <h2 className="text-3xl font-black tracking-tight">Dashboard Pemantauan</h2>
+        <p className="opacity-60 mt-1">Ringkasan data assessment bencana secara real-time.</p>
+      </div>
+
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard title="Total Laporan" value={stats.totalData} icon={Database} color="blue" isDark={isDark} />
+        <StatCard title="Total Valuasi Kerugian" value={`Rp ${(stats.totalLoss/1000000).toFixed(0)} Juta`} icon={Calculator} color="orange" isDark={isDark} />
+        <StatCard title="Status Jaringan" value="Terhubung" icon={Signal} color="emerald" isDark={isDark} />
+      </div>
+
+      {/* Main Data Table */}
+      <div className={`rounded-3xl border overflow-hidden ${isDark ? 'bg-[#1e293b]/80 border-white/10 backdrop-blur-xl' : 'bg-white shadow-2xl border-slate-200'}`}>
+        <div className="p-6 border-b border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h3 className="font-bold text-xl flex items-center gap-2"><Activity className="text-orange-500"/> Log Input Terkini</h3>
+            <p className="text-xs opacity-50 mt-1">Menampilkan seluruh data masuk dari surveyor lapangan.</p>
+          </div>
+          <div className="flex flex-wrap gap-2 w-full md:w-auto">
+              <button onClick={onSync} disabled={isSyncing} className={`flex-1 md:flex-none flex justify-center items-center gap-2 text-sm bg-blue-500/10 text-blue-500 px-4 py-2.5 rounded-xl font-bold hover:bg-blue-500/20 transition ${isSyncing ? 'opacity-50' : ''}`}>
+                {isSyncing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} Refresh
+              </button>
+              {currentUser.role === 'admin' && (
+                <button onClick={onExportCSV} className="flex-1 md:flex-none flex justify-center items-center gap-2 text-sm bg-emerald-500/10 text-emerald-500 px-4 py-2.5 rounded-xl font-bold hover:bg-emerald-500/20 transition">
+                  <FileSpreadsheet size={16} /> Export Data (.csv)
+                </button>
+              )}
+          </div>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left whitespace-nowrap">
+            <thead className={`text-xs uppercase font-bold tracking-wider ${isDark ? 'bg-black/30 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
+              <tr>
+                <th className="px-6 py-5">Identitas Pemilik</th>
+                <th className="px-6 py-5">Lokasi Kejadian</th>
+                <th className="px-6 py-5">Dimensi / Luas</th>
+                <th className="px-6 py-5">Tingkat Kerusakan</th>
+                <th className="px-6 py-5">Dokumentasi</th>
+                <th className="px-6 py-5 text-right">Tindakan</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {reports.length === 0 ? (
+                <tr><td colSpan="6" className="px-6 py-10 text-center opacity-50 italic">Belum ada data laporan yang direkam.</td></tr>
+              ) : reports.map((row, idx) => {
+                const photoArray = row?.photos ? row.photos.split('\n').filter(p => p.trim() !== '') : [];
+
+                return (
+                <tr key={idx} className={`transition duration-200 ${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+                  <td className="px-6 py-4">
+                    <div className="font-bold text-base">{row?.survivor?.nama || 'Tanpa Nama'}</div>
+                    <div className="text-[10px] opacity-60 flex items-center gap-1 mt-1"><UserCog size={10}/> Petugas: {row?.surveyor || '-'}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="font-semibold text-sm">Kel. {row?.survivor?.kelurahan || '-'}</div>
+                    <div className="text-[11px] opacity-60 mt-1">RT {row?.survivor?.rt || '-'} / RW {row?.survivor?.rw || '-'}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="font-mono bg-slate-500/10 px-2 py-1 rounded text-xs inline-block border border-slate-500/20">{row?.building?.luas || 0} m²</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${
+                      row?.building?.kerusakan === 'rusak' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
+                      row?.building?.kerusakan === 'sedang' ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' : 
+                      'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                    }`}>
+                      {row?.building?.kerusakan || '-'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    {photoArray.length > 0 ? (
+                      <button onClick={() => setViewPhotos(photoArray)} className="flex items-center gap-1.5 text-blue-500 hover:text-blue-400 font-semibold text-xs bg-blue-500/10 px-3 py-1.5 rounded-lg w-fit transition">
+                        <Camera size={14}/> Lihat Foto ({photoArray.length})
+                      </button>
+                    ) : <span className="text-xs opacity-30 italic">Tanpa Foto</span>}
+                  </td>
+                  <td className="px-6 py-4 flex justify-end gap-2">
+                    <button onClick={() => onPrintPDF(row)} className="p-2 bg-orange-500/10 text-orange-500 rounded-lg hover:bg-orange-500 hover:text-white transition" title="Unduh PDF Resmi">
+                      <Printer size={18}/>
+                    </button>
+                    {/* EDIT BUTTON */}
+                    {(currentUser.role === 'admin' || currentUser.username === row?.surveyor) && (
+                      <button onClick={() => onEdit(row)} className="p-2 bg-blue-500/10 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition" title="Koreksi Data">
+                        <Edit size={18}/>
+                      </button>
+                    )}
+                    {/* TOMBOL HAPUS DATA */}
+                    {(currentUser.role === 'admin' || currentUser.username === row?.surveyor) && (
+                      <button onClick={() => onDelete(row.timestamp)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition" title="Hapus Permanen">
+                        <Trash2 size={18}/>
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              )})}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Render Modal Pop-up Foto */}
+      {viewPhotos && (
+        <PhotoViewerModal 
+          photos={viewPhotos} 
+          onClose={() => setViewPhotos(null)} 
+          isDark={isDark} 
+        />
+      )}
+    </div>
+  );
+};
 
 // --- INPUT FORM (POLISHED UI) ---
 const InputForm = ({ user, isDark, onSuccess, googleScriptUrl, editData, onCancelEdit }) => {
