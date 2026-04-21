@@ -4,7 +4,7 @@ import {
   Lock, Camera, Trash2, Plus, AlertTriangle, Sun, Moon, LogOut, 
   Menu, X, ShieldCheck, Activity, Database, TrendingUp, Signal, 
   KeyRound, ChevronRight, GraduationCap, Layers, Box, CheckCircle, 
-  XCircle, Loader2, Edit, ExternalLink, RefreshCw, Bell, Megaphone,
+  XCircle, Loader2, Edit, ExternalLink, RefreshCw, Megaphone,
   Landmark, Calculator, FileDown, FileSpreadsheet, Printer, User, Info
 } from 'lucide-react';
 import jsPDF from 'jspdf';
@@ -13,7 +13,6 @@ import 'jspdf-autotable';
 // --- MASUKKAN URL GOOGLE SCRIPT ANDA DI SINI ---
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyALLV9OE3FfyrTA2H92nbUdcVu1_tQfBYjidpgUizuJhSEzOvw46BAkl8wGbK8FxeXQg/exec"; 
 
-// --- IKON TUGU MONAS KUSTOM ---
 const MonasIcon = ({ className = "w-12 h-12" }) => (
   <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M50 5 C50 5, 55 15, 55 20 C55 25, 45 25, 45 20 C45 15, 50 5, 50 5 Z" fill="#f97316" className="animate-pulse"/>
@@ -24,7 +23,6 @@ const MonasIcon = ({ className = "w-12 h-12" }) => (
   </svg>
 );
 
-// --- LATAR BELAKANG SKYLINE JAKARTA ---
 const JakartaSkyline = () => (
   <svg className="absolute bottom-0 left-0 w-full h-auto opacity-10 pointer-events-none" viewBox="0 0 1000 200" preserveAspectRatio="none">
     <path d="M0,200 L0,150 L50,150 L50,120 L80,120 L80,80 L110,80 L110,130 L150,130 L150,90 L180,90 L180,160 L220,160 L220,100 L250,100 L250,140 L300,140 L300,60 L330,60 L330,120 L370,120 L370,50 L400,50 L400,150 L450,150 L450,90 L480,90 L480,140 L520,140 L520,70 L550,70 L550,130 L600,130 L600,100 L630,100 L630,150 L680,150 L680,80 L710,80 L710,140 L750,140 L750,60 L780,60 L780,160 L830,160 L830,90 L860,90 L860,130 L900,130 L900,110 L930,110 L930,150 L970,150 L970,130 L1000,130 L1000,200 Z" fill="currentColor"/>
@@ -32,11 +30,9 @@ const JakartaSkyline = () => (
 );
 
 const App = () => {
-  // --- STATE ---
   const [users, setUsers] = useState([]);
   const [reports, setReports] = useState([]);
   const [runningText, setRunningText] = useState("Siaga Tanggap Galang - BPBD Provinsi DKI Jakarta");
-  const [botUsername, setBotUsername] = useState(""); 
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoadingInit, setIsLoadingInit] = useState(true);
   const [currentUser, setCurrentUser] = useState(null); 
@@ -45,9 +41,7 @@ const App = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-  // --- INITIAL LOAD ---
   useEffect(() => {
     const savedUser = localStorage.getItem('sijitupasna_user');
     if (savedUser) { try { setCurrentUser(JSON.parse(savedUser)); } catch (e) { localStorage.removeItem('sijitupasna_user'); } }
@@ -66,14 +60,11 @@ const App = () => {
                 if (fetchedUsers.length === 0) fetchedUsers = [{ id: 999, username: 'admin', password: '123', role: 'admin', name: 'Emergency Admin', assignedKelurahan: '' }];
                 setUsers(fetchedUsers); 
                 if(data.notification) setRunningText(data.notification);
-                if(data.botName) setBotUsername(data.botName); 
             } catch (e) {
-                console.error("Format data init tidak valid:", text);
                 setUsers([{ id: 1, username: 'admin', password: '123', role: 'admin', name: 'Admin Offline', assignedKelurahan: '' }]);
             }
             setIsLoadingInit(false); 
         } catch(err) {
-            console.error("Gagal koneksi ke server", err);
             setUsers([{ id: 1, username: 'admin', password: '123', role: 'admin', name: 'Admin Offline', assignedKelurahan: '' }]);
             setIsLoadingInit(false);
         }
@@ -95,14 +86,10 @@ const App = () => {
                 setIsSyncing(false); 
                 showToast("Data disinkronisasi", 'success');
             } catch(e) {
-                console.error("Gagal memproses JSON:", text);
-                setIsSyncing(false); 
-                showToast("Terjadi kesalahan format data dari server", 'error');
+                setIsSyncing(false); showToast("Terjadi kesalahan format data", 'error');
             }
         } catch(err) {
-            console.error(err); 
-            setIsSyncing(false); 
-            showToast("Gagal mengambil data", 'error');
+            setIsSyncing(false); showToast("Gagal mengambil data", 'error');
         }
     } else { setTimeout(() => setIsSyncing(false), 1000); }
   };
@@ -119,19 +106,40 @@ const App = () => {
     showToast("Pengumuman diperbarui!", "success");
   };
 
-  const handleChangePassword = (newPass) => {
-    if (!newPass) return showToast("Password kosong", "error");
-    const updatedUser = { ...currentUser, password: newPass };
-    setCurrentUser(updatedUser); localStorage.setItem('sijitupasna_user', JSON.stringify(updatedUser));
-    if(GOOGLE_SCRIPT_URL) fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'change_password', username: currentUser.username, newPassword: newPass }) });
-    setShowPasswordModal(false); showToast("Password diubah!", "success");
-  };
-
   const handleUpdateProfile = (newData) => {
     const updatedUser = { ...currentUser, ...newData };
     setCurrentUser(updatedUser); localStorage.setItem('sijitupasna_user', JSON.stringify(updatedUser));
     if(GOOGLE_SCRIPT_URL) fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'update_profile', username: currentUser.username, newName: newData.name, newPassword: newData.password }) });
     showToast("Profil diperbarui!", "success");
+  };
+
+  // --- FITUR HAPUS DATA LAPORAN ---
+  const handleDeleteReport = (timestamp) => {
+    const isConfirm = window.confirm("Peringatan: Apakah Anda yakin ingin menghapus data laporan ini secara permanen?");
+    if (!isConfirm) return;
+
+    // Hapus di UI secara langsung (Optimistic Update)
+    setReports(reports.filter(r => r.timestamp !== timestamp));
+    showToast("Memproses penghapusan...", "success");
+
+    // Hapus di Spreadsheet
+    if(GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith("http")) {
+        fetch(GOOGLE_SCRIPT_URL, { 
+            method: 'POST', 
+            mode: 'no-cors', 
+            headers: { 'Content-Type': 'text/plain' }, 
+            body: JSON.stringify({ 
+                action: 'delete_report', 
+                timestamp: timestamp, 
+                username: currentUser.username,
+                role: currentUser.role
+            }) 
+        }).catch(err => {
+            console.error("Gagal menghapus di server", err);
+            showToast("Koneksi bermasalah saat menghapus di server", "error");
+            fetchReports(); // Tarik ulang data jika gagal
+        });
+    }
   };
 
   const stats = useMemo(() => {
@@ -140,7 +148,6 @@ const App = () => {
     return { totalData, totalLoss };
   }, [reports]);
 
-  // --- EXPORT CSV ---
   const exportCSV = () => {
     if (reports.length === 0) return showToast("Tidak ada data", "error");
     let csvContent = "data:text/csv;charset=utf-8,Timestamp,Surveyor,Nama Pemilik,Kelurahan,RT,RW,Latitude,Longitude,Legalitas,NJOP,Kerusakan,Persentase,Luas(m2),Lantai,Kerugian Bangunan,Aset Terdampak,Total Kerugian Aset,Link Foto\n";
@@ -155,14 +162,12 @@ const App = () => {
     const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", `REKAP_JITUPASNA_${new Date().toLocaleDateString()}.csv`); document.body.appendChild(link); link.click();
   };
 
-  // --- EXPORT PDF ---
   const generatePDF = (data) => {
     try {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
-      doc.setFillColor(249, 115, 22); // Orange BPBD
-      doc.rect(0, 0, pageWidth, 25, 'F');
-      doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("LAPORAN SI-JITUPASNA", pageWidth / 2, 12, null, null, "center");
+      doc.setFillColor(249, 115, 22); doc.rect(0, 0, pageWidth, 25, 'F');
+      doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("LAPORAN E-JITUPASNA", pageWidth / 2, 12, null, null, "center");
       doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text("BPBD PROVINSI DKI JAKARTA", pageWidth / 2, 19, null, null, "center");
       
       const s = data?.survivor || {};
@@ -180,43 +185,37 @@ const App = () => {
     } catch (e) { console.error(e); showToast("Gagal membuat PDF", "error"); }
   };
 
-  // ==========================================
-  // VIEW: LANDING PAGE / LOGIN
-  // ==========================================
   if (!currentUser) return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#0b1120] text-white font-sans relative overflow-hidden">
-      {/* Background Ornaments */}
       <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-orange-600/20 blur-[150px] pointer-events-none"></div>
       <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-blue-600/20 blur-[150px] pointer-events-none"></div>
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay pointer-events-none"></div>
       <div className="text-slate-700"><JakartaSkyline /></div>
 
-      {/* Left Content (Hero) */}
       <div className="flex-1 flex flex-col justify-center p-8 md:p-20 z-10 relative">
         <div className="flex items-center gap-4 mb-8">
           <MonasIcon className="w-16 h-16" />
           <div>
             <h2 className="text-xl font-bold tracking-widest text-orange-500">BPBD DKI JAKARTA</h2>
-            <p className="text-xs text-slate-400">Rehabilitasi dan Rekonstruksi</p>
+            <p className="text-xs text-slate-400">Pusat Data dan Informasi Kebencanaan</p>
           </div>
         </div>
         <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-tight mb-4">
-          SI-JITUPASNA <br/>
+          E-JITUPASNA <br/>
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-600">
-            BPBD DKI JAKARTA
+            SIAGA BENCANA
           </span>
         </h1>
         <p className="text-lg md:text-xl text-slate-300 max-w-2xl mb-8 leading-relaxed">
-          Sistem Informasi Pengkajian Kebutuhan Pasca Bencana. Merupakan portal terpadu untuk pendataan, penilaian kerugian, dan penilaian kerusakan aset terdampak di wilayah DKI Jakarta secara Real-Time.
+          Sistem Informasi Pengkajian Kebutuhan Pasca Bencana. Merupakan portal terpadu untuk pendataan, valuasi kerugian, dan manajemen aset terdampak di wilayah DKI Jakarta secara Real-Time.
         </p>
         <div className="flex flex-wrap gap-4 text-sm font-bold text-slate-400">
           <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><MapPin className="text-orange-500" size={16}/> Pemetaan Akurat</div>
           <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><Calculator className="text-blue-500" size={16}/> Kalkulasi Otomatis</div>
-          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><ShieldCheck className="text-emerald-500" size={16}/> Akurasi Data</div>
+          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><ShieldCheck className="text-emerald-500" size={16}/> Tersertifikasi</div>
         </div>
       </div>
 
-      {/* Right Content (Login Card) */}
       <div className="w-full md:w-[450px] bg-slate-900/80 backdrop-blur-2xl border-l border-white/10 flex flex-col justify-center p-8 md:p-12 z-10 shadow-2xl">
         <div className="mb-8 text-center">
           <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/30">
@@ -236,7 +235,7 @@ const App = () => {
         )}
 
         <div className="mt-12 pt-6 border-t border-white/10 text-center">
-          <p className="text-[10px] text-slate-500 flex items-center justify-center gap-1"><Info size={12}/> Hubungi Staff Bidang Rehabilitasi dan Rekonstruksi untuk mendaftar</p>
+          <p className="text-[10px] text-slate-500 flex items-center justify-center gap-1"><Info size={12}/> Dukungan Teknis: Pusdatin BPBD DKI</p>
         </div>
       </div>
       
@@ -244,18 +243,13 @@ const App = () => {
     </div>
   );
 
-  // ==========================================
-  // VIEW: MAIN APPLICATION (DASHBOARD)
-  // ==========================================
   return (
     <div className={`flex h-screen overflow-hidden transition-colors duration-500 font-sans ${theme === 'dark' ? 'bg-[#0f172a] text-gray-100' : 'bg-slate-50 text-slate-800'}`}>
-      
-      {/* Sidebar Navigation */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 flex flex-col border-r shadow-2xl ${theme === 'dark' ? 'bg-[#0b1120] border-white/5' : 'bg-white border-slate-200'}`}>
         <div className="h-20 flex items-center gap-3 px-6 border-b border-white/5">
           <MonasIcon className="w-10 h-10" />
           <div>
-            <h1 className="font-black text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">SI-JITUPASNA</h1>
+            <h1 className="font-black text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">E-JITUPASNA</h1>
             <p className="text-[8px] font-bold opacity-60 uppercase tracking-widest">BPBD DKI JAKARTA</p>
           </div>
           <button onClick={() => setMobileMenuOpen(false)} className="md:hidden ml-auto"><X size={20}/></button>
@@ -292,16 +286,13 @@ const App = () => {
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        {/* Dynamic Theme Background */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
           <div className={`absolute inset-0 bg-gradient-to-br ${theme === 'dark' ? 'from-[#0f172a] via-[#1e293b] to-[#0f172a]' : 'from-slate-50 via-white to-slate-100'}`}></div>
           <div className="absolute top-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-orange-500/5 blur-[120px]"></div>
           <div className="text-slate-500"><JakartaSkyline /></div>
         </div>
 
-        {/* Running Text Alert Bar */}
         <div className="h-10 bg-[#0f172a] border-b border-white/10 flex items-center overflow-hidden relative z-20">
           <div className="bg-red-600 h-full px-4 flex items-center justify-center z-10 font-bold text-xs text-white tracking-widest shadow-lg gap-2">
             <AlertTriangle size={14} className="animate-pulse"/> INFO
@@ -311,16 +302,14 @@ const App = () => {
           </div>
         </div>
         
-        {/* Mobile Navbar */}
         <div className={`md:hidden h-16 flex items-center px-4 border-b z-20 backdrop-blur-md ${theme === 'dark' ? 'border-white/10 bg-[#0f172a]/80' : 'border-slate-200 bg-white/80'}`}>
           <button onClick={() => setMobileMenuOpen(true)} className="p-2 -ml-2 rounded-lg bg-orange-500/10 text-orange-500"><Menu/></button>
-          <span className="font-black text-lg ml-3 text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">SI-JITUPASNA</span>
+          <span className="font-black text-lg ml-3 text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">E-JITUPASNA</span>
         </div>
 
-        {/* Scrollable Main View */}
         <main className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-hide z-10 relative">
           <div className="max-w-7xl mx-auto">
-            {currentView === 'dashboard' && <DashboardView stats={stats} reports={reports} isSyncing={isSyncing} onSync={fetchReports} isDark={theme === 'dark'} currentUser={currentUser} onEdit={(row) => { setEditData(row); setCurrentView('input'); }} onExportCSV={exportCSV} onPrintPDF={generatePDF} botUsername={botUsername} />}
+            {currentView === 'dashboard' && <DashboardView stats={stats} reports={reports} isSyncing={isSyncing} onSync={fetchReports} isDark={theme === 'dark'} currentUser={currentUser} onEdit={(row) => { setEditData(row); setCurrentView('input'); }} onDelete={handleDeleteReport} onExportCSV={exportCSV} onPrintPDF={generatePDF} />}
             {currentView === 'input' && <InputForm user={currentUser} isDark={theme === 'dark'} onSuccess={() => { setEditData(null); fetchReports(); setCurrentView('dashboard'); showToast(editData ? "Pembaruan Berhasil" : "Data Berhasil Disimpan", 'success'); }} googleScriptUrl={GOOGLE_SCRIPT_URL} editData={editData} onCancelEdit={() => { setEditData(null); setCurrentView('dashboard'); }} />}
             {currentView === 'users' && currentUser.role === 'admin' && <UserManagement users={users} setUsers={setUsers} isDark={theme === 'dark'} googleScriptUrl={GOOGLE_SCRIPT_URL} showToast={showToast} />}
             {currentView === 'notification' && currentUser.role === 'admin' && <NotificationSetting currentText={runningText} onSave={handleUpdateRunningText} isDark={theme === 'dark'} />}
@@ -329,7 +318,6 @@ const App = () => {
         </main>
       </div>
       
-      {showPasswordModal && <PasswordModal onClose={() => setShowPasswordModal(false)} onChange={handleChangePassword} isDark={theme === 'dark'} />}
       <NotificationToast notification={notification} />
       <style>{`@keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } } .animate-marquee { animation: marquee 25s linear infinite; }`}</style>
     </div>
@@ -361,8 +349,8 @@ const LoginScreenLogic = ({ users, onLogin, onFail }) => {
   );
 };
 
-// --- DASHBOARD VIEW (ENHANCED SAFE MAPPING) ---
-const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser, onEdit, onExportCSV, onPrintPDF }) => (
+// --- DASHBOARD VIEW WITH DELETE FEATURE ---
+const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser, onEdit, onDelete, onExportCSV, onPrintPDF }) => (
   <div className="space-y-8 animate-fadeIn">
     {/* Headings */}
     <div>
@@ -444,9 +432,16 @@ const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser,
                   <button onClick={() => onPrintPDF(row)} className="p-2 bg-orange-500/10 text-orange-500 rounded-lg hover:bg-orange-500 hover:text-white transition" title="Unduh PDF Resmi">
                     <Printer size={18}/>
                   </button>
+                  {/* EDIT BUTTON */}
                   {(currentUser.role === 'admin' || currentUser.username === row?.surveyor) && (
                     <button onClick={() => onEdit(row)} className="p-2 bg-blue-500/10 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition" title="Koreksi Data">
                       <Edit size={18}/>
+                    </button>
+                  )}
+                  {/* TOMBOL HAPUS DATA */}
+                  {(currentUser.role === 'admin' || currentUser.username === row?.surveyor) && (
+                    <button onClick={() => onDelete(row.timestamp)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition" title="Hapus Permanen">
+                      <Trash2 size={18}/>
                     </button>
                   )}
                 </td>
@@ -479,7 +474,6 @@ const InputForm = ({ user, isDark, onSuccess, googleScriptUrl, editData, onCance
   const updateFamily = (id, field, val) => { setFamilies(families.map(f => { if(f.id === id) { const up = { ...f, [field]: val }; if(field === 'gaji' || field === 'hari') up.rugi = (parseFloat(up.gaji)||0) * (parseFloat(up.hari)||0); return up; } return f; })); };
   const handleFileChange = async (e) => { const files = Array.from(e.target.files); const base64Files = await Promise.all(files.map(file => new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve({ name: file.name, type: file.type, data: reader.result.split(',')[1] }); reader.onerror = reject; }))); setBuilding(prev => ({ ...prev, foto: [...prev.foto, ...base64Files] })); };
   
-  // --- TAMBAHAN BARU: Validasi sebelum Konfirmasi ---
   const handlePreSubmit = () => {
     if (!survivor.nama) { alert("Nama Pemilik wajib diisi!"); setActiveTab('A'); return; }
     if (!survivor.kelurahan) { alert("Kelurahan wajib diisi!"); setActiveTab('A'); return; }
@@ -492,23 +486,12 @@ const InputForm = ({ user, isDark, onSuccess, googleScriptUrl, editData, onCance
     const action = editData ? 'edit_report' : 'submit_report'; 
     const payload = { action, originalTimestamp: editData?.timestamp, timestamp: editData?.timestamp || new Date().toISOString(), surveyor: user.username, survivor, building, families, assets: { totalKerugian: assetLoss, notes }, photos: building.foto }; 
     
-    // --- PERBAIKAN: Pengecekan URL & Error Handling yang lebih baik ---
     if (googleScriptUrl && googleScriptUrl.startsWith("http")) { 
-      fetch(googleScriptUrl, { 
-        method: 'POST', 
-        mode: 'no-cors', 
-        headers: { 'Content-Type': 'text/plain' }, 
-        body: JSON.stringify(payload) 
-      }).then(() => { 
-        setIsSubmitting(false); onSuccess(); 
-      }).catch(err => { 
-        console.error(err); 
-        setIsSubmitting(false); 
-        alert("Koneksi gagal. Periksa jaringan internet Anda atau ukuran foto terlalu besar."); 
-      }); 
+      fetch(googleScriptUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
+      .then(() => { setIsSubmitting(false); onSuccess(); })
+      .catch(err => { console.error(err); setIsSubmitting(false); alert("Koneksi gagal. Periksa jaringan internet Anda atau ukuran foto terlalu besar."); }); 
     } else {
-      alert("URL Server Database belum dikonfigurasi! Hubungi Admin.");
-      setIsSubmitting(false);
+      alert("URL Server Database belum dikonfigurasi! Hubungi Admin."); setIsSubmitting(false);
     }
   };
   
@@ -562,25 +545,20 @@ const InputForm = ({ user, isDark, onSuccess, googleScriptUrl, editData, onCance
                 <div><label className={labelClass}>Lebar (Meter)</label><input type="number" value={building.lebar} onChange={e => setBuilding({...building, lebar: e.target.value})} className={inputClass} placeholder="0"/></div>
                 <div><label className={labelClass}>Luas Kalkulasi (m²)</label><input readOnly value={building.luas} className={`${inputClass} opacity-50 cursor-not-allowed bg-black/10`} /></div>
              </div>
-             
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <div><label className={labelClass}>Status Kepemilikan (Legalitas)</label><select value={building.legalitas} onChange={e => setBuilding({...building, legalitas: e.target.value})} className={inputClass}>{['SHM', 'SHGB', 'SHGU', 'SHP', 'HPL', 'SHMSRS', 'GIRIK', 'Surat Lainnya'].map(opt => <option key={opt} value={opt}>{opt}</option>)}</select></div>
                <div><label className={labelClass}>Jumlah Lantai</label><input type="number" placeholder="Contoh: 2" value={building.lantai} onChange={e => setBuilding({...building, lantai: e.target.value})} className={inputClass} /></div>
              </div>
-
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 rounded-2xl border-2 border-orange-500/20 bg-orange-500/5 relative overflow-hidden">
                <Landmark className="absolute -right-4 -bottom-4 text-orange-500/10 w-32 h-32" />
                <div className="relative z-10"><label className="text-[11px] font-bold uppercase tracking-widest text-orange-500 mb-2 block">Estimasi Harga NJOP (Per m²)</label><input type="number" placeholder="Rp" value={building.njop} onChange={e => setBuilding({...building, njop: e.target.value})} className={`${inputClass} border-orange-500/30 focus:border-orange-500`} /></div>
                <div className="relative z-10"><label className="text-[11px] font-bold uppercase tracking-widest text-orange-500 mb-2 block">Total Nilai Kerugian Bangunan</label><input readOnly value={`Rp ${parseFloat(building.totalKerugianBangunan||0).toLocaleString()}`} className={`${inputClass} font-mono font-bold text-orange-500 bg-orange-500/10 cursor-not-allowed border-orange-500/20`} /></div>
              </div>
-
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div><label className={labelClass}>Tingkat Kerusakan Fisik</label><select value={building.kerusakan} onChange={e => setBuilding({...building, kerusakan: e.target.value})} className={inputClass}><option value="baik">Rusak Ringan</option><option value="sedang">Rusak Sedang</option><option value="rusak">Rusak Berat</option></select></div>
                 <div><label className={labelClass}>Persentase Kerusakan (%)</label><input type="number" max="100" value={building.persentase} onChange={e => setBuilding({...building, persentase: e.target.value})} className={inputClass} placeholder="0 - 100"/></div>
              </div>
-
              <div><label className={labelClass}>Rincian Aset Terdampak (Perabotan/Elektronik)</label><textarea value={building.asetTerdampak} onChange={e => setBuilding({...building, asetTerdampak: e.target.value})} className={inputClass} rows="3" placeholder="Sebutkan barang yang rusak (Contoh: Kulkas, 2 Kasur, Lemari Kayu)"/></div>
-             
              <div>
                <label className={labelClass}>Unggah Dokumentasi Foto (Multiple)</label>
                <div className={`border-2 border-dashed rounded-2xl p-10 text-center hover:border-orange-500 cursor-pointer transition ${isDark?'border-white/20 bg-[#0b1120]':'border-slate-300 bg-slate-50'}`}>
@@ -606,22 +584,18 @@ const InputForm = ({ user, isDark, onSuccess, googleScriptUrl, editData, onCance
                   </div>
                   <button type="button" onClick={addFamily} className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg transition flex items-center gap-2"><Plus size={16}/> Tambah KK</button>
                 </div>
-                
                 <div className="space-y-4">
                   {families.map((f, idx) => (
                     <div key={f.id} className={`p-5 rounded-xl border relative ${isDark ? 'bg-[#0f172a] border-white/10' : 'bg-white border-slate-300 shadow-sm'}`}>
                         <button type="button" onClick={() => setFamilies(families.filter(x => x.id !== f.id))} className="absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"><Trash2 size={14}/></button>
-                        
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <div><label className="text-[10px] uppercase opacity-50 font-bold mb-1 block">Kepala Keluarga</label><input placeholder="Nama" value={f.nama} onChange={e => updateFamily(f.id, 'nama', e.target.value)} className={inputClass} /></div>
                           <div><label className="text-[10px] uppercase opacity-50 font-bold mb-1 block">Pekerjaan</label><input placeholder="Pekerjaan" value={f.kerja} onChange={e => updateFamily(f.id, 'kerja', e.target.value)} className={inputClass} /></div>
                         </div>
-                        
                         <div className="grid grid-cols-2 gap-4 mb-4">
                           <div><label className="text-[10px] uppercase opacity-50 font-bold mb-1 block">Jml Anggota</label><input type="number" placeholder="Jiwa" value={f.jmlAnggota} onChange={e => updateFamily(f.id, 'jmlAnggota', e.target.value)} className={inputClass} /></div>
                           <div><label className="text-[10px] uppercase opacity-50 font-bold mb-1 block">Anak Sekolah</label><input type="number" placeholder="Jiwa" value={f.jmlSekolah} onChange={e => updateFamily(f.id, 'jmlSekolah', e.target.value)} className={inputClass} /></div>
                         </div>
-                        
                         <div className="grid grid-cols-3 gap-4 p-4 bg-orange-500/5 rounded-xl border border-orange-500/10">
                           <div><label className="text-[10px] uppercase text-orange-500 font-bold mb-1 block">Penghasilan/Hari</label><input type="number" placeholder="Rp" value={f.gaji} onChange={e => updateFamily(f.id, 'gaji', e.target.value)} className={inputClass} /></div>
                           <div><label className="text-[10px] uppercase text-orange-500 font-bold mb-1 block">Hari Terhenti</label><input type="number" placeholder="Hari" value={f.hari} onChange={e => updateFamily(f.id, 'hari', e.target.value)} className={inputClass} /></div>
@@ -632,19 +606,13 @@ const InputForm = ({ user, isDark, onSuccess, googleScriptUrl, editData, onCance
                   {families.length === 0 && <p className="text-center text-sm opacity-50 py-8 italic">Klik 'Tambah KK' jika ada data keluarga yang menempati.</p>}
                 </div>
              </div>
-             
              <div>
                <label className={labelClass}>Total Estimasi Kerugian Aset Isian (Di luar bangunan)</label>
-               <div className="relative">
-                 <span className="absolute left-4 top-4 font-bold opacity-50">Rp</span>
-                 <input type="number" value={assetLoss} onChange={e => setAssetLoss(e.target.value)} className={`${inputClass} pl-12 text-lg font-bold`} placeholder="0" />
-               </div>
+               <div className="relative"><span className="absolute left-4 top-4 font-bold opacity-50">Rp</span><input type="number" value={assetLoss} onChange={e => setAssetLoss(e.target.value)} className={`${inputClass} pl-12 text-lg font-bold`} placeholder="0" /></div>
                <p className="text-[10px] opacity-50 mt-2">Isi dengan akumulasi nilai perabotan/harta benda yang rusak.</p>
              </div>
           </div>
         )}
-        
-        {/* ACTION BUTTONS */}
         <div className="pt-8 mt-4 flex justify-between items-center border-t border-white/10">
            <button type="button" onClick={() => setActiveTab(prev => prev === 'C' ? 'B' : 'A')} className={`px-6 py-3 font-bold opacity-50 hover:opacity-100 transition ${activeTab === 'A' ? 'invisible' : ''}`}>&larr; KEMBALI</button>
            {activeTab !== 'C' ? (
@@ -673,33 +641,18 @@ const UserProfile = ({ user, onUpdate, isDark }) => {
   return (<div className={`max-w-md mx-auto p-8 rounded-3xl border shadow-2xl animate-slideIn mt-10 ${isDark ? 'bg-[#1e293b]/90 border-white/10 backdrop-blur-xl' : 'bg-white border-slate-200'}`}><div className="flex flex-col items-center mb-8"><div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-4xl font-black text-white mb-4 shadow-xl border-4 border-[#0f172a]">{user.name.charAt(0)}</div><h2 className="text-2xl font-black">Profil Petugas</h2><p className="opacity-60 text-sm font-mono mt-1">ID: @{user.username} | {user.assignedKelurahan || 'Admin Pusat'}</p></div><div className="space-y-5"><div><label className="text-[11px] font-bold uppercase opacity-50 tracking-widest mb-2 block">Nama Lengkap</label><input className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDark?'bg-black/20 border-white/10 focus:border-blue-500':'bg-slate-50 focus:border-blue-500'}`} value={name} onChange={e=>setName(e.target.value)} /></div><div><label className="text-[11px] font-bold uppercase opacity-50 tracking-widest mb-2 block">Ubah Kata Sandi (Opsional)</label><input type="password" placeholder="Kosongkan jika tidak ingin diubah" className={`w-full p-4 rounded-xl border-2 outline-none font-bold ${isDark?'bg-black/20 border-white/10 focus:border-blue-500':'bg-slate-50 focus:border-blue-500'}`} value={pass} onChange={e=>setPass(e.target.value)} /></div><button onClick={() => {onUpdate({ name, password: pass || user.password }); setPass('');}} className="w-full py-4 mt-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-lg shadow-blue-500/20 transition">SIMPAN PEMBARUAN</button></div></div>); 
 };
 
-// --- FIX: USER MANAGEMENT FORM WITH BACKEND COMMUNICATION ---
 const UserManagement = ({ users, setUsers, isDark, googleScriptUrl, showToast }) => { 
   const [form, setForm] = useState({ id: null, originalUsername: '', name: '', username: '', password: '', assignedKelurahan: '', role: 'user' }); 
   
   const save = (e) => { 
     e.preventDefault(); 
     if(form.id) { 
-      // Update local state for immediate feedback
       setUsers(users.map(u => u.id === form.id ? form : u)); 
-      // Push update to backend
-      if(googleScriptUrl) {
-         fetch(googleScriptUrl, { 
-             method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, 
-             body: JSON.stringify({ action: 'edit_user', user: form }) 
-         });
-      }
+      if(googleScriptUrl) fetch(googleScriptUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'edit_user', user: form }) });
       showToast("Data User Diperbarui", 'success');
     } else { 
-      // Add new local state
       setUsers([...users, { ...form, id: Date.now() }]); 
-      // Push addition to backend
-      if(googleScriptUrl) { 
-         fetch(googleScriptUrl, { 
-             method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, 
-             body: JSON.stringify({ action: 'manage_user', user: form }) 
-         }); 
-      } 
+      if(googleScriptUrl) fetch(googleScriptUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'manage_user', user: form }) }); 
       showToast("User Baru Tersimpan", 'success');
     } 
     setForm({ id: null, originalUsername: '', name: '', username: '', password: '', assignedKelurahan: '', role: 'user' }); 
@@ -708,29 +661,19 @@ const UserManagement = ({ users, setUsers, isDark, googleScriptUrl, showToast })
   const handleDelete = (id) => {
     const userToDelete = users.find(u => u.id === id);
     setUsers(users.filter(x => x.id !== id));
-    if(googleScriptUrl && userToDelete) {
-        fetch(googleScriptUrl, { 
-             method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, 
-             body: JSON.stringify({ action: 'delete_user', username: userToDelete.username }) 
-        });
-    }
+    if(googleScriptUrl && userToDelete) fetch(googleScriptUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'delete_user', username: userToDelete.username }) });
     showToast("User Dihapus", 'success');
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-slideIn">
         <div className={`p-8 rounded-3xl border h-fit shadow-2xl ${isDark ? 'bg-[#1e293b]/90 border-white/10' : 'bg-white border-slate-200'}`}>
-            <h3 className="font-black text-xl mb-6 flex items-center gap-2">
-                <UserCog className="text-blue-500"/> {form.id ? 'Edit Akses' : 'Buat Akses Baru'}
-            </h3>
+            <h3 className="font-bold text-xl mb-6 flex items-center gap-2"><UserCog className="text-blue-500"/> {form.id ? 'Edit Akses' : 'Buat Akses Baru'}</h3>
             <form onSubmit={save} className="space-y-4">
                 <input required placeholder="Nama Lengkap Petugas" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} className={`w-full p-3 rounded-xl border outline-none text-sm font-medium ${isDark?'bg-black/20 border-white/10':'bg-slate-50'}`} />
                 <input required placeholder="Username (ID Login)" value={form.username} onChange={e=>setForm({...form, username:e.target.value})} className={`w-full p-3 rounded-xl border outline-none text-sm font-medium ${isDark?'bg-black/20 border-white/10':'bg-slate-50'}`} />
                 <input required placeholder="Kata Sandi" value={form.password} onChange={e=>setForm({...form, password:e.target.value})} className={`w-full p-3 rounded-xl border outline-none text-sm font-medium ${isDark?'bg-black/20 border-white/10':'bg-slate-50'}`} />
-                <select value={form.role} onChange={e=>setForm({...form, role:e.target.value})} className={`w-full p-3 rounded-xl border outline-none text-sm font-medium ${isDark?'bg-black/20 border-white/10':'bg-slate-50'}`}>
-                    <option value="user">Petugas Lapangan (User)</option>
-                    <option value="admin">Administrator (Admin)</option>
-                </select>
+                <select value={form.role} onChange={e=>setForm({...form, role:e.target.value})} className={`w-full p-3 rounded-xl border outline-none text-sm font-medium ${isDark?'bg-black/20 border-white/10':'bg-slate-50'}`}><option value="user">Petugas Lapangan</option><option value="admin">Administrator</option></select>
                 <input placeholder="Kunci Area (Cth: PLUIT)" value={form.assignedKelurahan} onChange={e=>setForm({...form, assignedKelurahan:e.target.value.toUpperCase()})} className={`w-full p-3 rounded-xl border outline-none text-sm font-medium uppercase ${isDark?'bg-black/20 border-white/10':'bg-slate-50'}`} />
                 <div className="flex gap-2">
                     {form.id && <button type="button" onClick={() => setForm({ id: null, originalUsername: '', name: '', username: '', password: '', assignedKelurahan: '', role: 'user' })} className="py-3 px-4 mt-2 bg-slate-500/20 text-slate-400 rounded-xl font-bold">Batal</button>}
@@ -742,10 +685,7 @@ const UserManagement = ({ users, setUsers, isDark, googleScriptUrl, showToast })
             {users.map(u => (
                 <div key={u.id} className={`p-5 rounded-2xl border flex justify-between items-center transition ${isDark ? 'bg-[#1e293b]/50 border-white/5 hover:bg-[#1e293b]' : 'bg-white border-slate-200 shadow-sm'}`}>
                     <div>
-                        <div className="flex items-center gap-2">
-                            <h4 className="font-bold text-lg">{u.name}</h4>
-                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${u.role === 'admin' ? 'bg-orange-500/20 text-orange-500' : 'bg-blue-500/20 text-blue-500'}`}>{u.role}</span>
-                        </div>
+                        <div className="flex items-center gap-2"><h4 className="font-bold text-lg">{u.name}</h4><span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${u.role === 'admin' ? 'bg-orange-500/20 text-orange-500' : 'bg-blue-500/20 text-blue-500'}`}>{u.role}</span></div>
                         <p className="text-xs opacity-60 font-mono mt-1">@{u.username} | {u.assignedKelurahan || 'Akses Global'}</p>
                     </div>
                     <div className="flex gap-2">
