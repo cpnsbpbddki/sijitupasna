@@ -13,6 +13,17 @@ import 'jspdf-autotable';
 // --- MASUKKAN URL GOOGLE SCRIPT ANDA DI SINI ---
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyALLV9OE3FfyrTA2H92nbUdcVu1_tQfBYjidpgUizuJhSEzOvw46BAkl8wGbK8FxeXQg/exec"; 
 
+// --- HELPER: Mengubah URL Google Drive menjadi Direct Image Link ---
+const getDirectImageUrl = (url) => {
+  if (!url) return '';
+  // Ekstrak ID Google Drive dari URL
+  const match = String(url).match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (match && match[1]) {
+    return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+  }
+  return url;
+};
+
 const MonasIcon = ({ className = "w-12 h-12" }) => (
   <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M50 5 C50 5, 55 15, 55 20 C55 25, 45 25, 45 20 C45 15, 50 5, 50 5 Z" fill="#f97316" className="animate-pulse"/>
@@ -96,7 +107,7 @@ const App = () => {
 
   useEffect(() => { if (currentUser && currentView === 'dashboard') fetchReports(); }, [currentUser, currentView]);
 
-  const showToast = (msg, type = 'success') => { setNotification({ show: true, message: msg, type }); setTimeout(() => setNotification({ show: false, message: '', type: 'success' }), 3000); };
+  const showToast = (msg, type = 'success') => { setNotification({ show: true, message: msg, type }); setTimeout(() => setNotification({ show: false, message: '', type: 'success' }), 4000); };
   const handleLogin = (u) => { setCurrentUser(u); localStorage.setItem('sijitupasna_user', JSON.stringify(u)); showToast(`Selamat Datang, ${u.name}!`); };
   const handleLogout = () => { localStorage.removeItem('sijitupasna_user'); setCurrentUser(null); setCurrentView('dashboard'); };
   
@@ -113,16 +124,13 @@ const App = () => {
     showToast("Profil diperbarui!", "success");
   };
 
-  // --- FITUR HAPUS DATA LAPORAN ---
   const handleDeleteReport = (timestamp) => {
     const isConfirm = window.confirm("Peringatan: Apakah Anda yakin ingin menghapus data laporan ini secara permanen?");
     if (!isConfirm) return;
 
-    // Hapus di UI secara langsung (Optimistic Update)
     setReports(reports.filter(r => r.timestamp !== timestamp));
     showToast("Memproses penghapusan...", "success");
 
-    // Hapus di Spreadsheet
     if(GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith("http")) {
         fetch(GOOGLE_SCRIPT_URL, { 
             method: 'POST', 
@@ -137,7 +145,7 @@ const App = () => {
         }).catch(err => {
             console.error("Gagal menghapus di server", err);
             showToast("Koneksi bermasalah saat menghapus di server", "error");
-            fetchReports(); // Tarik ulang data jika gagal
+            fetchReports(); 
         });
     }
   };
@@ -162,7 +170,10 @@ const App = () => {
     const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", `REKAP_JITUPASNA_${new Date().toLocaleDateString()}.csv`); document.body.appendChild(link); link.click();
   };
 
-  const generatePDF = (data) => {
+  // --- EXPORT PDF (DENGAN GAMBAR) ---
+  const generatePDF = async (data) => {
+    showToast("Mempersiapkan PDF & Mengunduh Foto... Mohon tunggu", "success");
+    
     try {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
@@ -179,10 +190,91 @@ const App = () => {
       const tableRows = [['Surveyor', data.surveyor || '-'], ['Koordinat', `${s.lat || '-'}, ${s.lng || '-'}`], ['Alamat', s.alamat || '-'], [{ content: 'DATA BANGUNAN & ASET', colSpan: 2, styles: { fillColor: [240, 240, 240], fontStyle: 'bold', halign: 'center' } }], ['Legalitas', b.legalitas || '-'], ['Dimensi', `${b.panjang||0}m x ${b.lebar||0}m (Luas: ${b.luas||0} m²)`], ['Lantai', b.lantai || '-'], ['Kerusakan', `${b.kerusakan || '-'} (${b.persentase || '0'}%)`], ['Aset Terdampak', b.asetTerdampak || '-'], [{ content: 'VALUASI', colSpan: 2, styles: { fillColor: [240, 240, 240], fontStyle: 'bold', halign: 'center' } }], ['NJOP', `Rp ${parseInt(b.njop || 0).toLocaleString()}`], ['Kerugian Bangunan', `Rp ${parseInt(b.totalKerugianBangunan || 0).toLocaleString()}`], ['Kerugian Aset', `Rp ${parseInt(a.totalKerugian || 0).toLocaleString()}`], [{ content: `TOTAL: Rp ${(parseInt(b.totalKerugianBangunan || 0) + parseInt(a.totalKerugian || 0)).toLocaleString()}`, colSpan: 2, styles: { fillColor: [249, 115, 22], textColor: 255, fontStyle: 'bold', halign: 'right' } }]];
       doc.autoTable({ startY: startY + 5, head: [['Parameter', 'Detail']], body: tableRows, theme: 'grid', headStyles: { fillColor: [15, 23, 42] }, columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 } } });
       
-      if (data?.families && data.families.length > 0) { doc.text("Daftar Keluarga Terdampak:", 14, doc.lastAutoTable.finalY + 10); const famRows = data.families.map(f => [f.nama, f.jmlAnggota, f.jmlSekolah, `Rp ${parseInt(f.rugi||0).toLocaleString()}`]); doc.autoTable({ startY: doc.lastAutoTable.finalY + 15, head: [['KK', 'Anggota', 'Sekolah', 'Loss']], body: famRows, theme: 'striped', headStyles: { fillColor: [37, 99, 235] } }); }
-      if (data?.photos) { doc.setFontSize(10); doc.setTextColor(37, 99, 235); const links = data.photos.split('\n'); doc.text("Lampiran Foto Dokumentasi:", 14, doc.lastAutoTable.finalY + 15); links.forEach((link, i) => { if(link) doc.textWithLink(`- Lihat Foto ${i+1}`, 14, doc.lastAutoTable.finalY + 22 + (i*6), { url: link }); }); }
+      let currentY = doc.lastAutoTable.finalY + 10;
+
+      if (data?.families && data.families.length > 0) { 
+        doc.text("Daftar Keluarga Terdampak:", 14, currentY); 
+        const famRows = data.families.map(f => [f.nama, f.jmlAnggota, f.jmlSekolah, `Rp ${parseInt(f.rugi||0).toLocaleString()}`]); 
+        doc.autoTable({ startY: currentY + 5, head: [['KK', 'Anggota', 'Sekolah', 'Loss']], body: famRows, theme: 'striped', headStyles: { fillColor: [37, 99, 235] } }); 
+        currentY = doc.lastAutoTable.finalY + 15;
+      } else {
+        currentY += 10;
+      }
+
+      // --- PEMROSESAN GAMBAR KE PDF ---
+      if (data?.photos) { 
+        doc.setFontSize(10); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
+        doc.text("Lampiran Foto Dokumentasi:", 14, currentY); 
+        doc.setFont("helvetica", "normal");
+        currentY += 8;
+
+        const links = String(data.photos).split(/\r?\n|,/).filter(p => p.trim() !== ''); 
+        
+        for (let i = 0; i < links.length; i++) {
+          const rawUrl = getDirectImageUrl(links[i]);
+          try {
+            // Gunakan API Proxy AllOrigins untuk bypass CORS Google Drive
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`;
+            
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            
+            // Tunggu gambar ter-load
+            await new Promise((resolve, reject) => {
+              img.onload = resolve;
+              img.onerror = reject;
+              img.src = proxyUrl;
+            });
+
+            // Kalkulasi Ukuran Gambar (Maksimal lebar 170)
+            const maxW = 170;
+            const ratio = img.height / img.width;
+            let w = maxW;
+            let h = maxW * ratio;
+            
+            // Jika gambar terlalu tinggi (potrait), batasi tingginya
+            if (h > 120) { h = 120; w = h / ratio; }
+
+            // Pengecekan sisa halaman, buat halaman baru jika tidak muat
+            if (currentY + h > 280) {
+                doc.addPage();
+                currentY = 20;
+            }
+
+            // Konversi gambar menjadi base64 Canvas untuk jsPDF
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            const imgData = canvas.toDataURL('image/jpeg');
+
+            // Tengah-kan posisi X
+            const xPos = (pageWidth - w) / 2;
+            doc.addImage(imgData, 'JPEG', xPos, currentY, w, h);
+            
+            // Tambahkan text index di bawah gambar
+            currentY += h + 5;
+            doc.setFontSize(8); doc.setTextColor(100, 100, 100);
+            doc.text(`Gambar ${i+1}`, pageWidth / 2, currentY, null, null, "center");
+            
+            currentY += 10;
+          } catch (e) {
+            console.warn("Gagal render gambar ke PDF", e);
+            // Fallback: Jika gagal di-load, tampilkan Link text biru
+            doc.setFontSize(10); doc.setTextColor(37, 99, 235); 
+            doc.textWithLink(`- Gagal memuat foto. Klik di sini untuk membuka Foto ${i+1}`, 14, currentY, { url: links[i] }); 
+            doc.setTextColor(0, 0, 0);
+            currentY += 8;
+          }
+        }
+      }
+      
       doc.save(`Laporan_${s.nama || 'TanpaNama'}.pdf`);
-    } catch (e) { console.error(e); showToast("Gagal membuat PDF", "error"); }
+      showToast("PDF Berhasil Diunduh!", "success");
+    } catch (e) { 
+      console.error(e); 
+      showToast("Gagal membuat PDF", "error"); 
+    }
   };
 
   if (!currentUser) return (
@@ -376,7 +468,7 @@ const PhotoViewerModal = ({ photos, onClose, isDark }) => {
 
         <div className="relative w-full h-full bg-black/50 rounded-2xl overflow-hidden border border-white/20 shadow-2xl flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
           <img 
-            src={photos[currentIndex]} 
+            src={getDirectImageUrl(photos[currentIndex])} 
             alt={`Dokumentasi ${currentIndex + 1}`} 
             className="max-w-full max-h-full object-contain" 
           />
@@ -457,7 +549,7 @@ const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser,
               {reports.length === 0 ? (
                 <tr><td colSpan="6" className="px-6 py-10 text-center opacity-50 italic">Belum ada data laporan yang direkam.</td></tr>
               ) : reports.map((row, idx) => {
-                const photoArray = row?.photos ? row.photos.split('\n').filter(p => p.trim() !== '') : [];
+                const photoArray = row?.photos ? String(row.photos).split(/\r?\n|,/).filter(p => p.trim() !== '') : [];
 
                 return (
                 <tr key={idx} className={`transition duration-200 ${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
