@@ -273,7 +273,7 @@ const App = () => {
           <MonasIcon className="w-16 h-16" />
           <div>
             <h2 className="text-xl font-bold tracking-widest text-orange-500">BPBD DKI JAKARTA</h2>
-            <p className="text-xs text-slate-400">Pusat Data dan Informasi Kebencanaan</p>
+            <p className="text-xs text-slate-400">Bidang Rehabilitasi dan Rekonstruksi</p>
           </div>
         </div>
         <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-tight mb-4">
@@ -286,9 +286,9 @@ const App = () => {
           Sistem Informasi Pengkajian Kebutuhan Pasca Bencana. Merupakan portal terpadu untuk pendataan, valuasi kerugian, dan manajemen aset terdampak di wilayah DKI Jakarta secara Real-Time.
         </p>
         <div className="flex flex-wrap gap-4 text-sm font-bold text-slate-400">
-          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><MapPin className="text-orange-500" size={16}/> Pemetaan Akurat</div>
+          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><MapPin className="text-orange-500" size={16}/> Akurasi Lokasi</div>
           <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><Calculator className="text-blue-500" size={16}/> Kalkulasi Otomatis</div>
-          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><ShieldCheck className="text-emerald-500" size={16}/> Tersertifikasi</div>
+          <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10"><ShieldCheck className="text-emerald-500" size={16}/> Validasi Data</div>
         </div>
       </div>
 
@@ -297,8 +297,8 @@ const App = () => {
           <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/30">
             <Lock className="text-white" size={28} />
           </div>
-          <h2 className="text-2xl font-bold">Portal Masuk</h2>
-          <p className="text-sm text-slate-400 mt-1">Silakan otentikasi identitas Anda.</p>
+          <h2 className="text-2xl font-bold">SiJitupasna</h2>
+          <p className="text-sm text-slate-400 mt-1">Silakan masukan username Anda.</p>
         </div>
         
         {isLoadingInit ? (
@@ -311,7 +311,7 @@ const App = () => {
         )}
 
         <div className="mt-12 pt-6 border-t border-white/10 text-center">
-          <p className="text-[10px] text-slate-500 flex items-center justify-center gap-1"><Info size={12}/> Dukungan Teknis: Pusdatin BPBD DKI</p>
+          <p className="text-[10px] text-slate-500 flex items-center justify-center gap-1"><Info size={12}/> Support: Subkel Penilaian Kerusakan BPBD DKI</p>
         </div>
       </div>
       
@@ -333,9 +333,9 @@ const App = () => {
         
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           <p className="px-4 text-[10px] font-bold uppercase opacity-40 mb-2 mt-2">Menu Utama</p>
-          <NavButton icon={LayoutDashboard} label="Dashboard Pusat" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
+          <NavButton icon={LayoutDashboard} label="Rekap Data" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
           <NavButton icon={FileText} label="Input Assessment" active={currentView === 'input'} onClick={() => { setEditData(null); setCurrentView('input'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
-          <NavButton icon={User} label="Profil Petugas" active={currentView === 'profile'} onClick={() => { setCurrentView('profile'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
+          <NavButton icon={User} label="Profile" active={currentView === 'profile'} onClick={() => { setCurrentView('profile'); setMobileMenuOpen(false); }} isDark={theme==='dark'} />
           
           {currentUser.role === 'admin' && (
             <>
@@ -412,14 +412,14 @@ const LoginScreenLogic = ({ users, onLogin, onFail }) => {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="relative">
         <User className="absolute left-4 top-4 text-slate-500" size={18} />
-        <input className="w-full bg-black/40 border border-white/10 text-white p-4 pl-12 rounded-xl outline-none focus:border-orange-500 transition" placeholder="ID Petugas (Username)" onChange={e=>setU(e.target.value)} required />
+        <input className="w-full bg-black/40 border border-white/10 text-white p-4 pl-12 rounded-xl outline-none focus:border-orange-500 transition" placeholder="Username" onChange={e=>setU(e.target.value)} required />
       </div>
       <div className="relative">
         <KeyRound className="absolute left-4 top-4 text-slate-500" size={18} />
         <input type="password" className="w-full bg-black/40 border border-white/10 text-white p-4 pl-12 rounded-xl outline-none focus:border-orange-500 transition" placeholder="Kata Sandi" onChange={e=>setP(e.target.value)} required />
       </div>
       <button className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-orange-500/20 transition transform hover:scale-[1.02]">
-        MASUK SISTEM
+        MASUK
       </button>
     </form>
   );
@@ -490,9 +490,9 @@ const DashboardView = ({ stats, reports, isSyncing, onSync, isDark, currentUser,
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard title="Total Laporan" value={stats.totalData} icon={Database} color="blue" isDark={isDark} />
-        <StatCard title="Total Valuasi Kerugian" value={`Rp ${(stats.totalLoss/1000000).toFixed(0)} Juta`} icon={Calculator} color="orange" isDark={isDark} />
-        <StatCard title="Status Jaringan" value="Terhubung" icon={Signal} color="emerald" isDark={isDark} />
+        <StatCard title="Total Laporan Masuk" value={stats.totalData} icon={Database} color="blue" isDark={isDark} />
+        <StatCard title="Total Estimasi Kerugian" value={`Rp ${(stats.totalLoss/1000000).toFixed(0)} Juta`} icon={Calculator} color="orange" isDark={isDark} />
+        <StatCard title="Status Database" value="Connected" icon={Signal} color="emerald" isDark={isDark} />
       </div>
 
       <div className={`rounded-3xl border overflow-hidden ${isDark ? 'bg-[#1e293b]/80 border-white/10 backdrop-blur-xl' : 'bg-white shadow-2xl border-slate-200'}`}>
